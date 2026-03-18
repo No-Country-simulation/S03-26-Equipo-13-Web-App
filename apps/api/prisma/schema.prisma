@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  name         String
+  role         String    @default("agent")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  contacts     Contact[]
+  tasks        Task[]
+}
+
+model Contact {
+  id           String          @id @default(uuid())
+  name         String
+  phone        String          @unique
+  email        String?
+  status       String          @default("new")
+  assignedTo   User?           @relation(fields: [assignedToId], references: [id])
+  assignedToId String?
+  tags         Tag[]
+  notes        String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  tasks        Task[]
+  messages     Message[]
+  flows        FlowExecution[]
+}
+
+model Task {
+  id           String    @id @default(uuid())
+  title        String
+  description  String?
+  status       String    @default("pending")
+  dueDate      DateTime?
+  contact      Contact   @relation(fields: [contactId], references: [id])
+  contactId    String
+  assignedTo   User?     @relation(fields: [assignedToId], references: [id])
+  assignedToId String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  direction String
+  channel   String   @default("whatsapp")
+  status    String   @default("sent")
+  contact   Contact  @relation(fields: [contactId], references: [id])
+  contactId String
+  createdAt DateTime @default(now())
+}
+
+model Template {
+  id        String   @id @default(uuid())
+  name      String
+  content   String
+  category  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Flow {
+  id         String          @id @default(uuid())
+  name       String
+  trigger    String
+  steps      Json
+  active     Boolean         @default(true)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  executions FlowExecution[]
+}
+
+model FlowExecution {
+  id         String    @id @default(uuid())
+  flow       Flow      @relation(fields: [flowId], references: [id])
+  flowId     String
+  contact    Contact   @relation(fields: [contactId], references: [id])
+  contactId  String
+  status     String    @default("running")
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+}
+
+model Tag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  contacts  Contact[]
+  createdAt DateTime  @default(now())
+}
