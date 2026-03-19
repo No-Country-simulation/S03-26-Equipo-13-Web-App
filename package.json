@@ -1,11 +1,14 @@
 {
   "name": "startup-crm",
   "private": true,
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*"
+  ],
+  "packageManager": "npm@10.8.2",
   "scripts": {
-    "dev":   "turbo run dev",
+    "dev": "turbo run dev",
     "build": "turbo run build",
-    "lint":  "turbo run lint"
+    "lint": "turbo run lint"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
