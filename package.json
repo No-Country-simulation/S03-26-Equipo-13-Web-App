@@ -13,5 +13,9 @@
   "devDependencies": {
     "turbo": "^2.0.0",
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1"
   }
 }
