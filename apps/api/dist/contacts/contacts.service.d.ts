@@ -18,10 +18,14 @@ export declare class ContactsService {
         updatedAt: Date;
     })[]>;
     findOne(id: string): Promise<{
-        tags: {
+        messages: {
             id: string;
-            name: string;
+            status: string;
             createdAt: Date;
+            content: string;
+            direction: string;
+            channel: string;
+            contactId: string;
         }[];
         tasks: {
             id: string;
@@ -29,19 +33,15 @@ export declare class ContactsService {
             assignedToId: string | null;
             createdAt: Date;
             updatedAt: Date;
-            title: string;
             description: string | null;
+            contactId: string;
+            title: string;
             dueDate: Date | null;
-            contactId: string;
         }[];
-        messages: {
+        tags: {
             id: string;
-            status: string;
+            name: string;
             createdAt: Date;
-            contactId: string;
-            content: string;
-            direction: string;
-            channel: string;
         }[];
     } & {
         id: string;

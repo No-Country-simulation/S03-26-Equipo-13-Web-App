@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  password     String
-  name         String
-  role         String    @default("agent")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  contacts     Contact[]
-  tasks        Task[]
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      String    @default("agent")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  contacts  Contact[]
+  tasks     Task[]
+  token     String? 
 }
 
 model Contact {
@@ -25,15 +26,15 @@ model Contact {
   phone        String          @unique
   email        String?
   status       String          @default("new")
-  assignedTo   User?           @relation(fields: [assignedToId], references: [id])
   assignedToId String?
-  tags         Tag[]
   notes        String?
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
-  tasks        Task[]
-  messages     Message[]
+  assignedTo   User?           @relation(fields: [assignedToId], references: [id])
   flows        FlowExecution[]
+  messages     Message[]
+  tasks        Task[]
+  tags         Tag[]           @relation("ContactToTag")
 }
 
 model Task {
@@ -42,12 +43,12 @@ model Task {
   description  String?
   status       String    @default("pending")
   dueDate      DateTime?
-  contact      Contact   @relation(fields: [contactId], references: [id])
   contactId    String
-  assignedTo   User?     @relation(fields: [assignedToId], references: [id])
   assignedToId String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  assignedTo   User?     @relation(fields: [assignedToId], references: [id])
+  contact      Contact   @relation(fields: [contactId], references: [id])
 }
 
 model Message {
@@ -56,9 +57,9 @@ model Message {
   direction String
   channel   String   @default("whatsapp")
   status    String   @default("sent")
-  contact   Contact  @relation(fields: [contactId], references: [id])
   contactId String
   createdAt DateTime @default(now())
+  contact   Contact  @relation(fields: [contactId], references: [id])
 }
 
 model Template {
@@ -83,18 +84,18 @@ model Flow {
 
 model FlowExecution {
   id         String    @id @default(uuid())
-  flow       Flow      @relation(fields: [flowId], references: [id])
   flowId     String
-  contact    Contact   @relation(fields: [contactId], references: [id])
   contactId  String
   status     String    @default("running")
   startedAt  DateTime  @default(now())
   finishedAt DateTime?
+  contact    Contact   @relation(fields: [contactId], references: [id])
+  flow       Flow      @relation(fields: [flowId], references: [id])
 }
 
 model Tag {
   id        String    @id @default(uuid())
   name      String    @unique
-  contacts  Contact[]
   createdAt DateTime  @default(now())
+  contacts  Contact[] @relation("ContactToTag")
 }
