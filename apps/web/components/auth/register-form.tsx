@@ -98,7 +98,7 @@ export function RegisterForm() {
 
       <Button
         type="submit"
-        className="w-full"
+        className="w-full bg-[var(--brand)]"
         disabled={isSubmitting}
       >
         {isSubmitting ? "Creando cuenta..." : "Crear mi cuenta"}
