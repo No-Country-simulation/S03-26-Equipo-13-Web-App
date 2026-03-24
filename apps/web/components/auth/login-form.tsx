@@ -66,7 +66,7 @@ export function LoginForm() {
         {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" className="w-full bg-[var(--brand)]" disabled={isSubmitting}>
         {isSubmitting ? "Ingresando..." : "Ingresar al CRM"}
       </Button>
     </form>
