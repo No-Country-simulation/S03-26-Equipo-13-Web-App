@@ -17,9 +17,9 @@ const geistMono = Geist_Mono({
 
 /* fuente segun guia de prueba crm */
 const dm_sans = DM_Sans({
-    subsets : ["latin"],
-    weight: ["500", "600", "700"]
-    
+  subsets: ["latin"],
+  weight: ["500", "600", "700"]
+
 })
 
 export const metadata: Metadata = {
@@ -38,7 +38,7 @@ export default function RootLayout({
         className={`${dm_sans.className} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-        {children}
+          {children}
         </AuthProvider>
       </body>
     </html>
