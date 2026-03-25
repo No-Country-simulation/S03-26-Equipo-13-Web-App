@@ -4,6 +4,19 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+  }
+}
+
+
+
 
 @theme inline {
   --color-brand: #6e3df5;
@@ -88,7 +101,8 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /* BRAND */
-  --brand: oklch(35.728% 0.22522 269.715); /* COLOR PRINCIPAL DE LA MARCA */
+  --brand: oklch(35.728% 0.22522 269.715);
+  /* COLOR PRINCIPAL DE LA MARCA */
   --brand-foreground: oklch(0.98 0 0);
 
   /* TEXT EXTENSIONS */
