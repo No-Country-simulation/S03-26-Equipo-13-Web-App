@@ -1,12 +1,10 @@
-# 🚀 Startup CRM - Guía de instalación y ejecución
+# 🚀 Startup CRM — Guía de instalación y ejecución
 
 Este proyecto es un monorepo con **frontend** (Next.js) y **backend** (NestJS + Prisma) usando Turborepo.
 
 ---
 
 ## 📋 Requisitos previos
-
-Instala las siguientes herramientas antes de comenzar:
 
 | Herramienta | Descarga |
 |---|---|
@@ -18,8 +16,6 @@ Instala las siguientes herramientas antes de comenzar:
 
 ## 📥 1. Clonar el repositorio
 
-Abre una terminal y ejecuta:
-
 ```bash
 git clone https://github.com/No-Country-simulation/S03-26-Equipo-13-Web-App.git
 cd S03-26-Equipo-13-Web-App
@@ -29,13 +25,11 @@ cd S03-26-Equipo-13-Web-App
 
 ## 🐳 2. Levantar la base de datos y Redis con Docker
 
-> ⚠️ Asegúrate de que **Docker Desktop esté abierto y corriendo** antes de ejecutar este comando.
-
 ```bash
 docker-compose up -d
 ```
 
-Esto levanta dos servicios:
+Levanta:
 - **PostgreSQL** en el puerto `5432`
 - **Redis** en el puerto `6379`
 
@@ -43,37 +37,42 @@ Esto levanta dos servicios:
 
 ## ⚙️ 3. Configurar variables de entorno del backend
 
-Entra a la carpeta del backend y crea el archivo `.env`:
-
 ```bash
 cd apps/api
 cp .env.example .env
 ```
 
-Abre el archivo `.env` y reemplaza su contenido con esto:
+Abre el `.env` y completa los valores:
 
 ```env
+# Base de datos
 DATABASE_URL="postgresql://crmuser:crmpass@localhost:5432/startupcrm"
+
+# Auth
 JWT_SECRET="supersecretkey123"
 JWT_EXPIRES_IN="7d"
+
+# Redis
 REDIS_HOST="localhost"
 REDIS_PORT="6379"
 PORT="3001"
+
+# WhatsApp Cloud API (Meta Developers)
+WHATSAPP_TOKEN="tu_token_de_meta"
+WHATSAPP_PHONE_ID="tu_phone_id"
+WHATSAPP_BUSINESS_ACCOUNT_ID="tu_business_account_id"
+WEBHOOK_VERIFY_TOKEN="token_secreto_que_tu_eliges"
+
+# Brevo (email) — opcional por ahora
+BREVO_API_KEY=""
 ```
-
-**Cómo abrir el `.env` según tu sistema:**
-
-- **Mac:** `open -e .env`
-- **Windows:** `notepad .env`
-- **Linux:** `nano .env`
 
 ---
 
-## 🗄️ 4. Generar el cliente de Prisma y aplicar migraciones
-
-Desde la carpeta `apps/api`, ejecuta:
+## 🗄️ 4. Generar Prisma y aplicar migraciones
 
 ```bash
+cd apps/api
 npx prisma generate
 npx prisma migrate deploy
 ```
@@ -81,8 +80,6 @@ npx prisma migrate deploy
 ---
 
 ## 📦 5. Instalar dependencias
-
-Vuelve a la raíz del proyecto e instala todo:
 
 ```bash
 cd ../..
@@ -93,93 +90,128 @@ npm install
 
 ## ▶️ 6. Levantar el proyecto
 
-### Frontend
-
-Desde la raíz del proyecto:
-
+**Terminal 1 — Frontend:**
 ```bash
 npm run dev
 ```
+Disponible en: http://localhost:3000
 
-El frontend estará disponible en: **http://localhost:3000**
-
----
-
-### Backend
-
-Abre una **segunda terminal**, entra a la carpeta del api y córrelo:
-
+**Terminal 2 — Backend:**
 ```bash
 cd apps/api
 PORT=3001 npm run start:dev
 ```
+Disponible en: http://localhost:3001
 
-El backend estará disponible en: **http://localhost:3001**
-
----
-
-## 📖 7. Ver la documentación de la API (Swagger)
-
-Con el backend corriendo, abre en el navegador:
-
-```
-http://localhost:3001/docs
-```
-
-Ahí encontrarás todos los endpoints documentados e interactivos.
+**Swagger docs:** http://localhost:3001/docs
 
 ---
 
-## 🔄 Cómo volver a levantar el proyecto (próximas veces)
+## 🧪 7. Correr tests
 
-Una vez instalado todo, solo necesitas hacer esto cada vez que quieras trabajar:
-
-**Terminal 1 — Frontend:**
 ```bash
-cd S03-26-Equipo-13-Web-App
-docker-compose up -d
-npm run dev
+cd apps/api
+npm run test
 ```
 
-**Terminal 2 — Backend:**
+---
+
+## 📡 8. Configurar webhook de WhatsApp (para desarrollo local)
+
+Necesitas una URL pública para que Meta pueda llamar al webhook:
+
 ```bash
-cd S03-26-Equipo-13-Web-App/apps/api
-PORT=3001 npm run start:dev
+# Instalar ngrok si no lo tienes
+npm install -g ngrok
+
+# Con el backend corriendo, en otra terminal:
+ngrok http 3001
 ```
+
+Luego en el portal de Meta Developers → tu app → WhatsApp → Configuración:
+- **Webhook URL:** `https://xxxx.ngrok.io/messages/webhook/whatsapp`
+- **Verify Token:** el valor de `WEBHOOK_VERIFY_TOKEN` en tu `.env`
+- **Suscribirse a:** `messages` y `message_status_updates`
+
+---
+
+## 🏗️ Arquitectura del backend
+
+```
+apps/api/src/
+├── auth/           POST /auth/register, login, logout | GET /auth/me | PATCH /auth/setup-channels
+├── contacts/       CRUD completo + tags + paginación
+├── tasks/          CRUD + recordatorios con BullMQ
+├── messages/       WhatsApp (Meta Cloud API) + Email (Brevo) + Socket.io en tiempo real
+├── flows/          Flujos automáticos con BullMQ
+├── templates/      Plantillas WhatsApp con webhook de aprobación Meta
+├── analytics/      KPIs dashboard + exportación CSV en background
+├── user/           CRUD usuarios (solo admin)
+├── prisma/         PrismaService global
+└── common/         Guards (JWT, Roles) + Decoradores
+```
+
+**22 endpoints documentados en Swagger** — todos con autenticación JWT excepto los webhooks de Meta.
+
+---
+
+## 📊 Estado del proyecto
+
+### ✅ Backend — completo
+- [x] Auth con JWT + Redis (refresh token)
+- [x] CRUD Contactos con filtros, paginación y tags
+- [x] Tareas con recordatorios BullMQ
+- [x] Mensajería WhatsApp — envío real vía Meta Cloud API, webhook inbound, status updates (sent/delivered/read/failed)
+- [x] Mensajería Email — estructura lista, pendiente conectar Brevo API key
+- [x] Flujos automáticos con BullMQ
+- [x] Plantillas WhatsApp con webhook de aprobación Meta
+- [x] Analytics: KPIs + gráfica de mensajes + exportación CSV
+- [x] WebSockets (Socket.io) para chat en tiempo real
+- [x] Swagger documentación completa en `/docs`
+- [x] Tests unitarios — 115 tests, 0 failures
+
+### 🔲 Pendiente
+- [ ] Frontend — 11 pantallas del MVP
+- [ ] Integración Brevo SMTP (agregar BREVO_API_KEY al .env)
+- [ ] Deploy en VPS / Railway
+- [ ] Configurar webhook en Meta con URL de producción
 
 ---
 
 ## 🛑 Detener el proyecto
 
-Para detener Docker:
 ```bash
-docker-compose down
+docker-compose down   # detener Docker
+# Ctrl+C en cada terminal para detener frontend y backend
 ```
-
-Para detener el frontend o backend: presiona `Ctrl + C` en cada terminal.
 
 ---
 
 ## 🐛 Problemas comunes
 
 ### `Cannot connect to the Docker daemon`
-Docker Desktop no está corriendo. Ábrelo desde tus aplicaciones y espera a que aparezca el ícono de la ballena 🐳.
+Docker Desktop no está corriendo. Ábrelo y espera el ícono de la ballena 🐳.
 
 ### `address already in use :::3000`
-Ya hay un proceso usando ese puerto. Mátalo con:
-- **Mac/Linux:** `pkill -f "next dev"`
-- **Windows:** `netstat -ano | findstr :3000` y luego `taskkill /PID <número> /F`
+```bash
+# Mac/Linux
+pkill -f "next dev"
+# Windows
+netstat -ano | findstr :3000
+taskkill /PID <número> /F
+```
 
 ### `Conflict. The container name is already in use`
-Elimina los contenedores viejos:
 ```bash
 docker rm -f startupcrm_db startupcrm_redis
 docker-compose up -d
 ```
 
 ### `Module '@prisma/client' has no exported member`
-Regenera el cliente de Prisma:
 ```bash
 cd apps/api
 npx prisma generate
 ```
+
+### `Cannot find module 'src/...'`
+El proyecto usa paths absolutos (`src/...`). Asegúrate de correr el backend desde `apps/api/`.
