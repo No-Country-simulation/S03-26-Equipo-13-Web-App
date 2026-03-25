@@ -1,27 +1,33 @@
-import { IsString, IsOptional, IsEmail } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsOptional, IsEmail, IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ContactStatus } from '@prisma/client';
 
 export class CreateContactDto {
-  @ApiProperty()
+  @ApiProperty({ example: 'María García' })
   @IsString()
   name: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: '+573001234567' })
   @IsString()
   phone: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ example: 'maria@empresa.com' })
   @IsOptional()
   @IsEmail()
   email?: string;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional({ enum: ContactStatus, default: ContactStatus.new })
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsEnum(ContactStatus)
+  status?: ContactStatus;
 
-  @ApiProperty({ required: false })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'ID del agente asignado' })
+  @IsOptional()
+  @IsString()
+  assignedToId?: string;
 }

@@ -20,6 +20,7 @@ describe('AuthController', () => {
     login: jest.fn(),
     logout: jest.fn(),
     getUserById: jest.fn(),
+    setupChannels: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -48,86 +49,64 @@ describe('AuthController', () => {
 
     it('should register a user and return the auth response', async () => {
       mockAuthService.register.mockResolvedValue(mockAuthResponse);
-
       const result = await controller.register(registerDto);
-
       expect(authService.register).toHaveBeenCalledWith(registerDto);
       expect(result).toEqual(mockAuthResponse);
     });
 
     it('should throw HttpException when authService.register throws', async () => {
-      mockAuthService.register.mockRejectedValue(
-        new Error('User with this email already exists'),
-      );
-
-      await expect(controller.register(registerDto)).rejects.toThrow(
-        HttpException,
-      );
+      mockAuthService.register.mockRejectedValue(new Error('User with this email already exists'));
+      await expect(controller.register(registerDto)).rejects.toThrow(HttpException);
     });
   });
 
-  // POST /auth/login 
+  // POST /auth/login
   describe('login', () => {
-    const loginDto: LoginDto = {
-      email: 'test@example.com',
-      password: 'password123',
-    };
+    const loginDto: LoginDto = { email: 'test@example.com', password: 'password123' };
 
     it('should login and return the auth response', async () => {
       mockAuthService.login.mockResolvedValue(mockAuthResponse);
-
       const result = await controller.login(loginDto);
-
       expect(authService.login).toHaveBeenCalledWith(loginDto);
       expect(result).toEqual(mockAuthResponse);
     });
 
     it('should throw HttpException when authService.login throws', async () => {
-      mockAuthService.login.mockRejectedValue(
-        new Error('Invalid email or password'),
-      );
-
+      mockAuthService.login.mockRejectedValue(new Error('Invalid email or password'));
       await expect(controller.login(loginDto)).rejects.toThrow(HttpException);
     });
   });
 
   // POST /auth/logout
   describe('logout', () => {
-    it('should call authService.logout and return the result', async () => {
+    it('should call authService.logout with userId from request and return result', async () => {
       const logoutResult = { message: 'Logged out successfully' };
       mockAuthService.logout.mockResolvedValue(logoutResult);
 
-      const result = await controller.logout({});
+      // Must pass req with user.id — the controller reads req.user.id
+      const result = await controller.logout({ user: { id: 'user-1' } });
 
-      expect(authService.logout).toHaveBeenCalled();
+      expect(authService.logout).toHaveBeenCalledWith('user-1');
       expect(result).toEqual(logoutResult);
     });
   });
 
-  // GET /auth/me 
+  // GET /auth/me
   describe('me', () => {
     it('should return the current user when userId is present in request', async () => {
       const userProfile = {
-        id: 'user-1',
-        email: 'test@example.com',
-        name: 'Test',
-        role: 'agent',
-        createdAt: new Date(),
+        id: 'user-1', email: 'test@example.com', name: 'Test',
+        role: 'agent', createdAt: new Date(),
       };
       mockAuthService.getUserById.mockResolvedValue(userProfile);
-
-      const req = { user: { id: 'user-1' } };
-      const result = await controller.me(req);
-
+      const result = await controller.me({ user: { id: 'user-1' } });
       expect(authService.getUserById).toHaveBeenCalledWith('user-1');
       expect(result).toEqual(userProfile);
     });
 
     it('should throw UNAUTHORIZED HttpException when userId is missing', async () => {
-      const req = { user: null };
-
-      await expect(controller.me(req)).rejects.toThrow(HttpException);
-      await expect(controller.me(req)).rejects.toMatchObject({
+      await expect(controller.me({ user: null })).rejects.toThrow(HttpException);
+      await expect(controller.me({ user: null })).rejects.toMatchObject({
         status: HttpStatus.UNAUTHORIZED,
       });
     });

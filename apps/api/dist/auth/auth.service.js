@@ -41,118 +41,98 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
-const client_1 = require("@prisma/client");
-const user_service_1 = require("../user/user.service");
+const prisma_service_1 = require("../prisma/prisma.service");
 const bcrypt = __importStar(require("bcrypt"));
 const jwt_1 = require("@nestjs/jwt");
+const ioredis_1 = __importDefault(require("ioredis"));
+const REFRESH_TTL = 60 * 60 * 24 * 7;
 let AuthService = class AuthService {
-    userService;
+    prisma;
     jwtService;
-    constructor(userService, jwtService) {
-        this.userService = userService;
+    redis;
+    constructor(prisma, jwtService, redis) {
+        this.prisma = prisma;
         this.jwtService = jwtService;
+        this.redis = redis;
     }
-    prisma = new client_1.PrismaClient();
     async register(registerDto) {
-        const [existingEmail] = await Promise.all([
-            this.prisma.user.findUnique({ where: { email: registerDto.email } }),
-        ]);
+        const existingEmail = await this.prisma.user.findUnique({
+            where: { email: registerDto.email },
+        });
         if (existingEmail) {
             throw new common_1.BadRequestException('User with this email already exists');
         }
         const hashedPassword = await bcrypt.hash(registerDto.password, 10);
         const role = registerDto.role ?? 'agent';
-        console.log('Registering user with role:', role);
         const user = await this.prisma.user.create({
             data: {
                 email: registerDto.email,
                 password: hashedPassword,
                 name: registerDto.name,
-                role: role,
+                role,
             },
         });
-        const payload = {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-        };
+        const payload = { id: user.id, email: user.email, name: user.name, role: user.role };
         const access_token = this.jwtService.sign(payload);
         const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
-        user.token = refresh_token;
-        await this.prisma.user.update({
-            where: { id: user.id },
-            data: { token: refresh_token },
-        });
+        await this.redis.set(`refresh:${user.id}`, refresh_token, 'EX', REFRESH_TTL);
         return {
             access_token,
             refresh_token,
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-            },
+            user: { id: user.id, email: user.email, name: user.name, role: user.role },
         };
     }
     async login(loginDto) {
-        const user = await this.prisma.user.findUnique({
-            where: { email: loginDto.email },
-        });
-        if (!user) {
+        const user = await this.prisma.user.findUnique({ where: { email: loginDto.email } });
+        if (!user)
             throw new common_1.BadRequestException('Invalid email or password');
-        }
         const passwordMatch = await bcrypt.compare(loginDto.password, user.password);
-        if (!passwordMatch) {
+        if (!passwordMatch)
             throw new common_1.BadRequestException('Invalid email or password');
-        }
-        const payload = {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-        };
+        const payload = { id: user.id, email: user.email, name: user.name, role: user.role };
         const access_token = this.jwtService.sign(payload);
         const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
-        user.token = refresh_token;
-        await this.prisma.user.update({
-            where: { id: user.id },
-            data: { token: refresh_token },
-        });
+        await this.redis.set(`refresh:${user.id}`, refresh_token, 'EX', REFRESH_TTL);
         return {
             access_token,
             refresh_token,
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-            },
+            user: { id: user.id, email: user.email, name: user.name, role: user.role },
         };
+    }
+    async logout(userId) {
+        await this.redis.del(`refresh:${userId}`);
+        return { message: 'Logged out successfully' };
     }
     async getUserById(id) {
         return this.prisma.user.findUnique({
             where: { id },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
-                createdAt: true,
-            },
+            select: { id: true, email: true, name: true, role: true, createdAt: true },
         });
     }
-    async logout() {
-        return { message: 'Logged out successfully' };
+    async setupChannels(userId, dto) {
+        const user = await this.prisma.user.update({
+            where: { id: userId },
+            data: {},
+            select: { id: true, name: true, email: true, role: true },
+        });
+        return { ...user, channels: dto };
     }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [user_service_1.UserService,
-        jwt_1.JwtService])
+    __param(2, (0, common_1.Inject)('REDIS_CLIENT')),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        jwt_1.JwtService,
+        ioredis_1.default])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

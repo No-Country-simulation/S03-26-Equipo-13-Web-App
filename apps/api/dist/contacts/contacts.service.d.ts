@@ -1,43 +1,77 @@
+import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateContactDto } from './create-contact.dto';
 export declare class ContactsService {
-    findAll(status?: string, busqueda?: string, page?: number): Promise<({
-        tags: {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    findAll(status?: string, busqueda?: string, page?: number): Promise<{
+        data: ({
+            tags: {
+                id: string;
+                name: string;
+                createdAt: Date;
+            }[];
+            assignedTo: {
+                id: string;
+                name: string;
+            } | null;
+        } & {
             id: string;
+            email: string | null;
             name: string;
             createdAt: Date;
-        }[];
-    } & {
-        id: string;
-        name: string;
-        phone: string;
-        email: string | null;
-        status: string;
-        assignedToId: string | null;
-        notes: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-    })[]>;
+            updatedAt: Date;
+            phone: string;
+            status: import(".prisma/client").$Enums.ContactStatus;
+            notes: string | null;
+            assignedToId: string | null;
+        })[];
+        total: number;
+        page: number;
+        totalPages: number;
+    }>;
     findOne(id: string): Promise<{
-        messages: {
-            id: string;
-            status: string;
-            createdAt: Date;
-            content: string;
-            direction: string;
-            channel: string;
-            contactId: string;
-        }[];
         tasks: {
             id: string;
-            status: string;
-            assignedToId: string | null;
             createdAt: Date;
             updatedAt: Date;
             description: string | null;
-            contactId: string;
             title: string;
+            status: import(".prisma/client").$Enums.TaskStatus;
+            assignedToId: string | null;
             dueDate: Date | null;
+            contactId: string;
         }[];
+        tags: {
+            id: string;
+            name: string;
+            createdAt: Date;
+        }[];
+        assignedTo: {
+            id: string;
+            name: string;
+        } | null;
+        messages: {
+            id: string;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.MessageStatus;
+            contactId: string;
+            content: string;
+            direction: import(".prisma/client").$Enums.MessageDirection;
+            channel: import(".prisma/client").$Enums.MessageChannel;
+            wamid: string | null;
+        }[];
+    } & {
+        id: string;
+        email: string | null;
+        name: string;
+        createdAt: Date;
+        updatedAt: Date;
+        phone: string;
+        status: import(".prisma/client").$Enums.ContactStatus;
+        notes: string | null;
+        assignedToId: string | null;
+    }>;
+    create(data: CreateContactDto): Promise<{
         tags: {
             id: string;
             name: string;
@@ -45,36 +79,31 @@ export declare class ContactsService {
         }[];
     } & {
         id: string;
-        name: string;
-        phone: string;
         email: string | null;
-        status: string;
-        assignedToId: string | null;
-        notes: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
-    }>;
-    create(data: CreateContactDto): Promise<{
-        id: string;
-        name: string;
         phone: string;
-        email: string | null;
-        status: string;
-        assignedToId: string | null;
+        status: import(".prisma/client").$Enums.ContactStatus;
         notes: string | null;
-        createdAt: Date;
-        updatedAt: Date;
+        assignedToId: string | null;
     }>;
     update(id: string, data: Partial<CreateContactDto>): Promise<{
+        tags: {
+            id: string;
+            name: string;
+            createdAt: Date;
+        }[];
+    } & {
         id: string;
-        name: string;
-        phone: string;
         email: string | null;
-        status: string;
-        assignedToId: string | null;
-        notes: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        phone: string;
+        status: import(".prisma/client").$Enums.ContactStatus;
+        notes: string | null;
+        assignedToId: string | null;
     }>;
     updateTags(id: string, tagNames: string[]): Promise<{
         tags: {
@@ -84,24 +113,24 @@ export declare class ContactsService {
         }[];
     } & {
         id: string;
-        name: string;
-        phone: string;
         email: string | null;
-        status: string;
-        assignedToId: string | null;
-        notes: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        phone: string;
+        status: import(".prisma/client").$Enums.ContactStatus;
+        notes: string | null;
+        assignedToId: string | null;
     }>;
     remove(id: string): Promise<{
         id: string;
-        name: string;
-        phone: string;
         email: string | null;
-        status: string;
-        assignedToId: string | null;
-        notes: string | null;
+        name: string;
         createdAt: Date;
         updatedAt: Date;
+        phone: string;
+        status: import(".prisma/client").$Enums.ContactStatus;
+        notes: string | null;
+        assignedToId: string | null;
     }>;
 }

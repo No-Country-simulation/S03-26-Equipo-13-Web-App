@@ -1,21 +1,36 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtModule } from '@nestjs/jwt/dist/jwt.module';
+import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { UserModule } from 'src/user/user.module';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import Redis from 'ioredis';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    // Provide a shared Redis client using the REDIS_CLIENT token
+    {
+      provide: 'REDIS_CLIENT',
+      useFactory: (config: ConfigService) =>
+        new Redis({
+          host: config.get<string>('REDIS_HOST', 'localhost'),
+          port: config.get<number>('REDIS_PORT', 6379),
+        }),
+      inject: [ConfigService],
+    },
+  ],
   imports: [
-    UserModule,
+    PrismaModule,
+    ConfigModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'tu-clave-secreta',
       signOptions: { expiresIn: '24h' },
     }),
-    PrismaModule,
   ],
+  exports: [AuthService],
 })
 export class AuthModule {}

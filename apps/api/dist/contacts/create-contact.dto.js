@@ -12,40 +12,48 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateContactDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
+const client_1 = require("@prisma/client");
 class CreateContactDto {
     name;
     phone;
     email;
     status;
     notes;
+    assignedToId;
 }
 exports.CreateContactDto = CreateContactDto;
 __decorate([
-    (0, swagger_1.ApiProperty)(),
+    (0, swagger_1.ApiProperty)({ example: 'María García' }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateContactDto.prototype, "name", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)(),
+    (0, swagger_1.ApiProperty)({ example: '+573001234567' }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateContactDto.prototype, "phone", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, swagger_1.ApiPropertyOptional)({ example: 'maria@empresa.com' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsEmail)(),
     __metadata("design:type", String)
 ], CreateContactDto.prototype, "email", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, swagger_1.ApiPropertyOptional)({ enum: client_1.ContactStatus, default: client_1.ContactStatus.new }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsEnum)(client_1.ContactStatus),
     __metadata("design:type", String)
 ], CreateContactDto.prototype, "status", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ required: false }),
+    (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateContactDto.prototype, "notes", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'ID del agente asignado' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateContactDto.prototype, "assignedToId", void 0);
 //# sourceMappingURL=create-contact.dto.js.map

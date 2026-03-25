@@ -1,6 +1,7 @@
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { SetupChannelsDto } from './dto/setup-channels.dto';
 export declare class AuthController {
     private authService;
     constructor(authService: AuthService);
@@ -11,7 +12,7 @@ export declare class AuthController {
             id: string;
             email: string;
             name: string;
-            role: string;
+            role: import(".prisma/client").$Enums.UserRole;
         };
     }>;
     login(loginDto: LoginDto): Promise<{
@@ -21,7 +22,7 @@ export declare class AuthController {
             id: string;
             email: string;
             name: string;
-            role: string;
+            role: import(".prisma/client").$Enums.UserRole;
         };
     }>;
     logout(req: any): Promise<{
@@ -31,7 +32,17 @@ export declare class AuthController {
         id: string;
         email: string;
         name: string;
-        role: string;
+        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
     } | null>;
+    setupChannels(req: any, dto: SetupChannelsDto): Promise<{
+        channels: {
+            whatsappNumber?: string;
+            contactEmail?: string;
+        };
+        id: string;
+        email: string;
+        name: string;
+        role: import(".prisma/client").$Enums.UserRole;
+    }>;
 }

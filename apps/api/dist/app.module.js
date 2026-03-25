@@ -8,19 +8,42 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const app_controller_1 = require("./app.controller");
-const app_service_1 = require("./app.service");
-const contacts_module_1 = require("./contacts/contacts.module");
+const config_1 = require("@nestjs/config");
+const bull_1 = require("@nestjs/bull");
+const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
-const user_module_1 = require("./user/user.module");
+const contacts_module_1 = require("./contacts/contacts.module");
+const tasks_module_1 = require("./tasks/tasks.module");
+const messages_module_1 = require("./messages/messages.module");
+const flows_module_1 = require("./flows/flows.module");
+const templates_module_1 = require("./templates/templates.module");
+const analytics_module_1 = require("./analytics/analytics.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [contacts_module_1.ContactsModule, auth_module_1.AuthModule, user_module_1.UserModule],
-        controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        imports: [
+            config_1.ConfigModule.forRoot({ isGlobal: true }),
+            bull_1.BullModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: (config) => ({
+                    redis: {
+                        host: config.get('REDIS_HOST', 'localhost'),
+                        port: config.get('REDIS_PORT', 6379),
+                    },
+                }),
+                inject: [config_1.ConfigService],
+            }),
+            prisma_module_1.PrismaModule,
+            auth_module_1.AuthModule,
+            contacts_module_1.ContactsModule,
+            tasks_module_1.TasksModule,
+            messages_module_1.MessagesModule,
+            flows_module_1.FlowsModule,
+            templates_module_1.TemplatesModule,
+            analytics_module_1.AnalyticsModule,
+        ],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

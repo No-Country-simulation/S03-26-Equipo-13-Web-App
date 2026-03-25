@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { UserService } from './user.service';
+import { PrismaService } from 'src/prisma/prisma.service';
 
-// ── Mock PrismaClient ──────────────────────────────────────────────────────────
+// ── Mock PrismaService ─────────────────────────────────────────────────────────
 const mockPrismaUser = {
   findUnique: jest.fn(),
   findMany: jest.fn(),
@@ -11,10 +13,12 @@ const mockPrismaUser = {
   delete: jest.fn(),
 };
 
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => ({
-    user: mockPrismaUser,
-  })),
+const mockPrismaService = { user: mockPrismaUser };
+
+// ── Mock bcrypt ────────────────────────────────────────────────────────────────
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('hashed-password'),
+  compare: jest.fn(),
 }));
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -33,10 +37,14 @@ describe('UserService', () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UserService],
+      providers: [
+        UserService,
+        { provide: PrismaService, useValue: mockPrismaService },
+      ],
     }).compile();
 
     service = module.get<UserService>(UserService);
+    (service as any).prisma = mockPrismaService;
   });
 
   it('should be defined', () => {
@@ -51,27 +59,26 @@ describe('UserService', () => {
       name: 'Test User',
     };
 
-    it('should create and return a new user', async () => {
+    it('should hash the password and create a user without exposing it', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(null);
       mockPrismaUser.create.mockResolvedValue(safeUser);
 
       const result = await service.create(createDto);
 
-      expect(mockPrismaUser.findUnique).toHaveBeenCalledWith({
-        where: { email: createDto.email },
-      });
+      expect(bcrypt.hash).toHaveBeenCalledWith(createDto.password, 10);
       expect(mockPrismaUser.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: createDto }),
+        expect.objectContaining({
+          data: expect.objectContaining({ password: 'hashed-password' }),
+        }),
       );
       expect(result).toEqual(safeUser);
+      expect(result).not.toHaveProperty('password');
     });
 
     it('should throw BadRequestException if email already exists', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(safeUser);
 
-      await expect(service.create(createDto)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.create(createDto)).rejects.toThrow(BadRequestException);
       await expect(service.create(createDto)).rejects.toThrow(
         'User with this email already exists',
       );
@@ -80,7 +87,7 @@ describe('UserService', () => {
 
   // ── findAll ───────────────────────────────────────────────────────────────
   describe('findAll', () => {
-    it('should return all users', async () => {
+    it('should return all users with safe fields only', async () => {
       const userList = [safeUser];
       mockPrismaUser.findMany.mockResolvedValue(userList);
 
@@ -102,16 +109,13 @@ describe('UserService', () => {
 
     it('should return an empty array when no users exist', async () => {
       mockPrismaUser.findMany.mockResolvedValue([]);
-
-      const result = await service.findAll();
-
-      expect(result).toEqual([]);
+      expect(await service.findAll()).toEqual([]);
     });
   });
 
   // ── findOne ───────────────────────────────────────────────────────────────
   describe('findOne', () => {
-    it('should return a user by id', async () => {
+    it('should return a user by id without password', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(safeUser);
 
       const result = await service.findOne('user-1');
@@ -121,25 +125,21 @@ describe('UserService', () => {
         select: expect.objectContaining({ id: true }),
       });
       expect(result).toEqual(safeUser);
+      expect(result).not.toHaveProperty('password');
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne('nonexistent')).rejects.toThrow(
-        NotFoundException,
-      );
-      await expect(service.findOne('nonexistent')).rejects.toThrow(
-        'User not found',
-      );
+      await expect(service.findOne('nonexistent')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('nonexistent')).rejects.toThrow('User not found');
     });
   });
 
   // ── update ────────────────────────────────────────────────────────────────
   describe('update', () => {
-    const updateDto = { name: 'Updated Name' };
-
-    it('should update and return the user', async () => {
+    it('should update and return the user with safe fields', async () => {
+      const updateDto = { name: 'Updated Name' };
       const updatedUser = { ...safeUser, name: 'Updated Name' };
       mockPrismaUser.findUnique.mockResolvedValue(safeUser);
       mockPrismaUser.update.mockResolvedValue(updatedUser);
@@ -152,35 +152,45 @@ describe('UserService', () => {
       expect(result).toEqual(updatedUser);
     });
 
+    it('should hash the new password if it is being updated', async () => {
+      const updateDto = { password: 'new-plain-password' };
+      mockPrismaUser.findUnique.mockResolvedValue(safeUser);
+      mockPrismaUser.update.mockResolvedValue(safeUser);
+
+      await service.update('user-1', updateDto);
+
+      expect(bcrypt.hash).toHaveBeenCalledWith('new-plain-password', 10);
+      expect(mockPrismaUser.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ password: 'hashed-password' }),
+        }),
+      );
+    });
+
     it('should throw NotFoundException when user does not exist', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(null);
-
-      await expect(service.update('nonexistent', updateDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.update('nonexistent', { name: 'x' })).rejects.toThrow(NotFoundException);
     });
   });
 
   // ── remove ────────────────────────────────────────────────────────────────
   describe('remove', () => {
-    it('should delete and return the deleted user', async () => {
+    it('should delete the user and return safe fields without password', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(safeUser);
       mockPrismaUser.delete.mockResolvedValue(safeUser);
 
       const result = await service.remove('user-1');
 
-      expect(mockPrismaUser.delete).toHaveBeenCalledWith({
-        where: { id: 'user-1' },
-      });
+      expect(mockPrismaUser.delete).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'user-1' } }),
+      );
       expect(result).toEqual(safeUser);
+      expect(result).not.toHaveProperty('password');
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
       mockPrismaUser.findUnique.mockResolvedValue(null);
-
-      await expect(service.remove('nonexistent')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.remove('nonexistent')).rejects.toThrow(NotFoundException);
     });
   });
 });
