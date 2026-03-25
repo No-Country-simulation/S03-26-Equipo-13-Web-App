@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateFlowDto, UpdateFlowDto } from './flows.dto';
 import { FLOWS_QUEUE } from './flows.processor';
@@ -51,7 +51,6 @@ export class FlowsService {
     });
   }
 
-  // Called internally (e.g. from a contact event) to kick off a flow execution
   async triggerFlow(flowId: string, contactId: string) {
     const flow = await this.prisma.flow.findUnique({ where: { id: flowId } });
     if (!flow || !flow.active) return null;

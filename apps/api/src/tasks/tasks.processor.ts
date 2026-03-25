@@ -1,6 +1,6 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 
 export const TASKS_QUEUE = 'tasks';
 
@@ -18,7 +18,6 @@ export class TasksProcessor {
   @Process('reminder')
   async handleReminder(job: Job<TaskReminderJob>) {
     const { taskId, title, assignedToId } = job.data;
-    // TODO: integrate with email/WhatsApp notification once Messages module is wired up
     this.logger.log(`Reminder fired — task "${title}" (${taskId}) for user ${assignedToId ?? 'unassigned'}`);
   }
 }

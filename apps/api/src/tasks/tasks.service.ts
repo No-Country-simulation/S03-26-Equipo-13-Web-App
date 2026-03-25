@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTaskDto, UpdateTaskDto } from './tasks.dto';
 import { TASKS_QUEUE } from './tasks.processor';
@@ -60,7 +60,6 @@ export class TasksService {
     const task = await this.prisma.task.findUnique({ where: { id } });
     if (!task) throw new NotFoundException(`Tarea ${id} no encontrada`);
 
-    // Map each field explicitly — avoids spreading dueDate as a raw string into Prisma
     const updated = await this.prisma.task.update({
       where: { id },
       data: {
@@ -76,7 +75,6 @@ export class TasksService {
       },
     });
 
-    // Reschedule BullMQ reminder if dueDate changed
     if (dto.dueDate) {
       await this.tasksQueue.removeJobs(`reminder:${id}`);
       const delay = new Date(dto.dueDate).getTime() - Date.now();

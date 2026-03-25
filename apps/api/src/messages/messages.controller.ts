@@ -17,7 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { MessagesService } from './messages.service';
 import { SendWhatsappDto, SendEmailDto } from './messages.dto';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -32,7 +32,6 @@ export class MessagesController {
     private readonly config: ConfigService,
   ) {}
 
-  // ── GET /messages?contactId= ───────────────────────────────────────────────
   @Get()
   @ApiOperation({
     summary: 'Historial unificado de mensajes de un contacto',
@@ -45,7 +44,6 @@ export class MessagesController {
     return this.messagesService.findByContact(contactId);
   }
 
-  // ── POST /messages/whatsapp ────────────────────────────────────────────────
   @Post('whatsapp')
   @ApiOperation({
     summary: 'Enviar mensaje de WhatsApp',
@@ -63,7 +61,6 @@ export class MessagesController {
     return this.messagesService.sendWhatsapp(dto);
   }
 
-  // ── POST /messages/email ───────────────────────────────────────────────────
   @Post('email')
   @ApiOperation({
     summary: 'Enviar email vía Brevo SMTP',
@@ -76,7 +73,6 @@ export class MessagesController {
     return this.messagesService.sendEmail(dto);
   }
 
-  // ── GET /messages/webhook/whatsapp — Meta verification challenge ──────────
   @Public()
   @Get('webhook/whatsapp')
   @ApiOperation({
@@ -99,11 +95,9 @@ export class MessagesController {
   ) {
     const verifyToken = this.config.getOrThrow<string>('WEBHOOK_VERIFY_TOKEN');
     const result = this.messagesService.verifyWebhook(mode, token, challenge, verifyToken);
-    // Meta expects a plain text 200 response with just the challenge string
     res.status(200).send(result);
   }
 
-  // ── POST /messages/webhook/whatsapp — inbound messages + status updates ───
   @Public()
   @Post('webhook/whatsapp')
   @ApiOperation({

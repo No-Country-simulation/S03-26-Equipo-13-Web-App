@@ -1,6 +1,6 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessagesService } from 'src/messages/messages.service';
 import { FlowStepType } from './flows.dto';
@@ -49,7 +49,6 @@ export class FlowsProcessor {
       return;
     }
 
-    // If there are more steps, schedule the next one (with optional delay from current step config)
     const nextIndex = stepIndex + 1;
     if (nextIndex < steps.length) {
       const delay = step.config?.delayMs ?? 0;
@@ -75,7 +74,6 @@ export class FlowsProcessor {
         await this.messagesService.sendWhatsapp({
           contactId,
           content: step.config?.content ?? '',
-          templateId: step.config?.templateId,
         });
         break;
 
@@ -84,7 +82,6 @@ export class FlowsProcessor {
           contactId,
           subject: step.config?.subject ?? '',
           content: step.config?.content ?? '',
-          templateId: step.config?.templateId,
         });
         break;
 
@@ -110,7 +107,6 @@ export class FlowsProcessor {
         break;
 
       case FlowStepType.wait:
-        // The delay is handled by BullMQ's job delay — nothing to execute here
         break;
 
       default:

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ContactStatus, MessageDirection } from '@prisma/client';
 
@@ -51,7 +51,6 @@ export class AnalyticsService {
       orderBy: { createdAt: 'asc' },
     });
 
-    // Group by date string → { date, inbound, outbound }
     const grouped: Record<string, { date: string; inbound: number; outbound: number }> = {};
 
     for (const msg of messages) {

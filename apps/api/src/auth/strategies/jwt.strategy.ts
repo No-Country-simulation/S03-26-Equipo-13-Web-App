@@ -18,12 +18,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       where: { id: payload.id },
     });
 
-    console.log('Validating user in JWT strategy:', user);
     if (!user) {
       throw new UnauthorizedException('User not found');
-    }
-    if (!user.token || user.token === '') {
-      throw new UnauthorizedException('User is logged out');
     }
 
     return user;

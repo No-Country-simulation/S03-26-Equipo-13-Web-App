@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { Payload } from 'src/interfaces/payload.interface';
 import { JwtService } from '@nestjs/jwt';
+import { UserRole } from '@prisma/client';
 import Redis from 'ioredis';
 
 const REFRESH_TTL = 60 * 60 * 24 * 7; // 7 days
@@ -25,7 +26,7 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    const role = registerDto.role ?? 'agent';
+    const role = (registerDto.role ?? 'agent') as UserRole;
 
     const user = await this.prisma.user.create({
       data: {
@@ -40,7 +41,6 @@ export class AuthService {
     const access_token = this.jwtService.sign(payload);
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-    // Store refresh token in Redis — never in the DB
     await this.redis.set(`refresh:${user.id}`, refresh_token, 'EX', REFRESH_TTL);
 
     return {
@@ -61,7 +61,6 @@ export class AuthService {
     const access_token = this.jwtService.sign(payload);
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-    // Rotate refresh token in Redis
     await this.redis.set(`refresh:${user.id}`, refresh_token, 'EX', REFRESH_TTL);
 
     return {

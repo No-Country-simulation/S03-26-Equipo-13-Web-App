@@ -3,8 +3,8 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserRole } from '@prisma/client';
 
-// Columns safe to return — never include password
 const SAFE_SELECT = {
   id: true,
   email: true,
@@ -15,7 +15,6 @@ const SAFE_SELECT = {
 
 @Injectable()
 export class UserService {
-  // Inject PrismaService — never instantiate PrismaClient directly in a service
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateUserDto) {
@@ -26,11 +25,14 @@ export class UserService {
       throw new BadRequestException('User with this email already exists');
     }
 
-    // Hash password before storing — never save plain text
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     return this.prisma.user.create({
-      data: { ...data, password: hashedPassword },
+      data: {
+        ...data,
+        password: hashedPassword,
+        role: data.role as UserRole | undefined,
+      },
       select: SAFE_SELECT,
     });
   }
@@ -49,12 +51,11 @@ export class UserService {
   }
 
   async update(id: string, data: UpdateUserDto) {
-    await this.findOne(id); // throws 404 if not found
+    await this.findOne(id);
 
-    // If password is being updated, hash it
     const safeData = data.password
-      ? { ...data, password: await bcrypt.hash(data.password, 10) }
-      : data;
+      ? { ...data, password: await bcrypt.hash(data.password, 10), role: data.role as UserRole | undefined }
+      : { ...data, role: data.role as UserRole | undefined };
 
     return this.prisma.user.update({
       where: { id },
@@ -64,10 +65,9 @@ export class UserService {
   }
 
   async remove(id: string) {
-    await this.findOne(id); // throws 404 if not found
+    await this.findOne(id);
     return this.prisma.user.delete({
       where: { id },
-      // select: SAFE_SELECT ensures password is not returned on delete
       select: SAFE_SELECT,
     });
   }
