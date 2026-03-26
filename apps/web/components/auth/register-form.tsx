@@ -4,35 +4,46 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { registerSchema, RegisterInput } from "@/lib/validators/auth"; // Importamos el nuevo validador
+import { registerSchema, type RegisterInput } from "@/lib/validators/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Asumiendo que tienes componente Alert
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 export function RegisterForm() {
-  const [serverStatus, setServerStatus] = useState<{ type: 'error' | 'success', message: string } | null>(null);
+  const [serverStatus, setServerStatus] = useState<{
+    type: 'error' | 'success',
+    message: string
+  } | null>(null);
+
   const router = useRouter();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<RegisterInput>({
+
+  const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-        name: "",
-        email: "",
-        password: "",
-        role: "USER" // Puedes setear un rol por defecto aquí si quieres mostrarlo VER con back
-    }
+      name: "",
+      email: "",
+      password: "",
+      role: "admin",
+    },
   });
 
-  const onSubmit = async (data: RegisterInput) => {
+
+  async function onSubmit(data: RegisterInput) {
     setServerStatus(null);
     try {
-      // Usamos el endpoint de registro (ajusta la URL según tu backend)
-      const response = await fetch("http://localhost:3000/auth/register", { 
+      const response = await fetch("http://localhost:3001/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -41,68 +52,114 @@ export function RegisterForm() {
       const result = await response.json();
 
       if (!response.ok) {
-        // Manejo de errores de NestJS (ej: "Email already exists")
         throw new Error(result.message || "Error al registrar usuario");
       }
 
-      // Registro exitoso
-      setServerStatus({ type: 'success', message: "¡Cuenta creada con éxito! Redirigiendo al login..." });
-      
-      // Redireccionar al login después de 2 segundos para que vean el mensaje
+      setServerStatus({
+        type: 'success',
+        message: "¡Cuenta creada con éxito! Redirigiendo..."
+      });
+
       setTimeout(() => {
         router.push("/login");
       }, 2000);
-      
+
     } catch (error: any) {
       setServerStatus({ type: 'error', message: error.message });
     }
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      
-      {/* Mensajes del servidor */}
-      {serverStatus && (
-        <Alert variant={serverStatus.type === 'error' ? 'destructive' : 'default'} className={serverStatus.type === 'success' ? 'border-green-500 bg-green-50 text-green-700' : ''}>
-          {serverStatus.type === 'error' ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4 text-green-600" />}
-          <AlertTitle>{serverStatus.type === 'error' ? 'Error' : '¡Éxito!'}</AlertTitle>
-          <AlertDescription>{serverStatus.message}</AlertDescription>
-        </Alert>
-      )}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-      {/* NOMBRE */}
-      <div className="space-y-1">
-        <p className="text-sm font-medium">Nombre Completo</p>
-        <Input placeholder="Nombre Completo" {...register("name")} />
-        {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
-      </div>
+        {/* Alertas de Servidor */}
+        {serverStatus && (
+          <Alert
+            variant={serverStatus.type === 'error' ? 'destructive' : 'default'}
+            className={cn(
+              "items-center py-3",
+              serverStatus.type === 'success' ? 'border-green-500 bg-green-50 text-green-700' : ''
+            )}
+          >
+            {serverStatus.type === 'error' ? (
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+            )}
+            <div className="flex flex-row items-center gap-2">
+              <AlertTitle className="mb-0">{serverStatus.type === 'error' ? 'Error' : '¡Éxito!'}</AlertTitle>
+              <AlertDescription>{serverStatus.message}</AlertDescription>
+            </div>
+          </Alert>
+        )}
 
-      {/* EMAIL */}
-      <div className="space-y-1">
-        <p className="text-sm font-medium">Correo electrónico</p>
-        <Input placeholder="email@startup.com" {...register("email")} />
-        {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
-      </div>
+        <div className="space-y-4">
+          {/* Nombre */}
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre Completo</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej. Juan Pérez" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-      {/* PASSWORD */}
-      <div className="space-y-1">
-        <p className="text-sm font-medium">Contraseña (min. 6 caracteres)</p>
-        <Input type="password" placeholder="••••••••" {...register("password")} />
-        {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
-      </div>
-      
-      {/* ROLE (Opcional/Oculto) */}
-      {/* Si el back asigna rol por defecto
-        
-      */}
+          {/* Email */}
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Correo electrónico</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="email@startup.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-      <Button
-        type="submit"
-        className="w-full bg-[var(--brand)]"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? "Creando cuenta..." : "Crear mi cuenta"}
-      </Button>
-    </form>
+          {/* Password */}
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contraseña</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="••••••••" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full bg-[var(--color-brand)]"
+          disabled={form.formState.isSubmitting}
+        >
+          {form.formState.isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creando cuenta...
+            </>
+          ) : (
+            "Crear mi cuenta"
+          )}
+        </Button>
+      </form>
+    </Form>
   );
 }

@@ -5,10 +5,10 @@ import Link from "next/link";
 
 export default function RegisterPage() {
   return (
-    <Card className="space-y-6 p-6">
+    <Card className="space-y-6 p-6 w-full max-w-md">
       {/* HEADER */}
       <div className="text-center space-y-2">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand)]">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-brand)]">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
             <circle cx="8.5" cy="7" r="4" />

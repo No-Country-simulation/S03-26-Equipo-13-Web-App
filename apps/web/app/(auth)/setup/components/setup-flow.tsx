@@ -14,9 +14,9 @@ export default function SetupFlow() {
   return (
     <Card className="w-full max-w-md p-6">
 
-    
 
- {/* DEBUG NAV (temporal) quitar al conectar los steps*/}
+
+      {/* DEBUG NAV (temporal) quitar al conectar los steps*/}
       <div className="flex gap-2 justify-center">
         {[1, 2, 3, 4].map((s) => (
           <button
