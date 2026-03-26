@@ -1,14 +1,14 @@
 
 import { LoginForm } from "@/components/auth/login-form";
 import { Card } from "@/components/ui/card";
-import  Link  from "next/link";
+import Link from "next/link";
 
 export default function LoginPage() {
   return (
     <Card className="space-y-6 p-6">
       {/* HEADER (Estático, Server Side) */}
       <div className="text-center space-y-2">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--brand)]">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--color-brand)]">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>

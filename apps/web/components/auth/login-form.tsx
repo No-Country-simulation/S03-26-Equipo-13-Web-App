@@ -1,74 +1,128 @@
-"use client"; 
-//estados
+"use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-//validacion caracteres
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema, LoginInput } from "@/lib/validators/auth";
-//compornentes
+import { loginSchema, type LoginInput } from "@/lib/validators/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-//authContext mantener la sesion activa 
-import { useAuth } from "@/context/AuthContext"; 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle, Loader2 } from "lucide-react";
+
+import { useAuthStore } from "@/store/authStore";
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 export function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const router = useRouter();
-  const { login } = useAuth();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginInput>({
+
+  const loginAction = useAuthStore((state) => state.login);
+
+  const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
 
-  const onSubmit = async (data: LoginInput) => {
+  async function onSubmit(data: LoginInput) {
     setServerError(null);
     try {
-      const response = await fetch("http://localhost:3000/auth/login", {
+      const response = await fetch("http://localhost:3001/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Error al iniciar sesión");
 
-      // Actualizamos el contexto global
-      login(result.accessToken, result.user);
+      if (!response.ok) {
+        throw new Error(result.message || "Credenciales incorrectas");
+      }
+
+      // IMPORTANTE: Le pasamos los datos exactos que manda NestJS
+      // result.access_token, result.refresh_token y result.user
+      loginAction(result.access_token, result.refresh_token, result.user);
+
       router.push("/dashboard");
-      
+
     } catch (error: any) {
       setServerError(error.message);
     }
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {serverError && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md text-sm">
-          {serverError}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+
+        {serverError && (
+          <Alert variant="destructive" className="items-center py-3">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <div className="flex flex-row items-center gap-2">
+              <AlertTitle className="mb-0">Error</AlertTitle>
+              <AlertDescription>{serverError}</AlertDescription>
+            </div>
+          </Alert>
+        )}
+
+        <div className="space-y-4">
+          {/* Email */}
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Correo electrónico</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="tu@empresa.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Password */}
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contraseña</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="••••••••" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-      )}
 
-      <div className="space-y-1">
-        <p className="text-sm font-medium">Correo electrónico</p>
-        <Input placeholder="tu@empresa.com" {...register("email")} />
-        {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
-      </div>
-
-      <div className="space-y-1">
-        <p className="text-sm font-medium">Contraseña</p>
-        <Input type="password" placeholder="••••••••" {...register("password")} />
-        {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
-      </div>
-
-      <Button type="submit" className="w-full bg-[var(--brand)]" disabled={isSubmitting}>
-        {isSubmitting ? "Ingresando..." : "Ingresar al CRM"}
-      </Button>
-    </form>
+        <Button
+          type="submit"
+          className="w-full bg-[var(--color-brand)]"
+          disabled={form.formState.isSubmitting}
+        >
+          {form.formState.isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Ingresando...
+            </>
+          ) : (
+            "Ingresar al CRM"
+          )}
+        </Button>
+      </form>
+    </Form>
   );
 }
