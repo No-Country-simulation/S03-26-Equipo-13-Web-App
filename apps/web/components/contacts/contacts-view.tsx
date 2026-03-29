@@ -4,6 +4,7 @@
 import { ContactsTable } from "./contacts-table";
 import { CreateContactDialog } from "./contact-dialog";
 import { ContactsFilters } from "./contacts-filter";
+import { ContactsSearch } from "./contacts-search";
 
 export function ContactsView() {
 
@@ -15,8 +16,8 @@ export function ContactsView() {
         <CreateContactDialog  />
       </div>
       <div className="flex items-center gap-3 flex-1 min-w-[300px]">
-        {/* 🔜 luego va el search acá */}
-    <ContactsFilters />
+       <ContactsSearch/>
+        <ContactsFilters />
         </div>
 
       <ContactsTable  />
