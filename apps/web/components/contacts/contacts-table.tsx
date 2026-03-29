@@ -17,6 +17,7 @@ import { StatusBadge } from "./status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useContactsStore } from "@/store/contactsStore";
 import { ContactsSkeleton } from "./contacts-skeleton";
+import { ContactsPagination } from "./contacts-pagination";
 
 type Contact = {
   id: string;
@@ -33,144 +34,219 @@ const statusLabelMap: Record<string, string> = {
   archived: "Archivado",
 };
 
-export function ContactsTable() {
-  const token = useAuthStore((state) => state.token)
-  const refreshKey = useContactsStore((state) => state.refreshKey);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [loading, setLoading] = useState(true);
-  const status = useContactsStore((state) => state.status);
+//enviar todo al back
+// export function ContactsTable() {
+//   const token = useAuthStore((state) => state.token)
+//   const refreshKey = useContactsStore((state) => state.refreshKey);
+//   const [contacts, setContacts] = useState<Contact[]>([]);
+//   const [loading, setLoading] = useState(true);
+//   const page = useContactsStore((state) => state.page)
+//   const setPage = useContactsStore((state) => state.setPage)
+//   const status = useContactsStore((state) => state.status);
 
+//   const [totalPages, setTotalPages]= useState(1);
+  
+  
+//   const limit = 5
 
-//   useEffect(() => {
-//     const fetchContacts = async () => {
-//       try {
-//         const res = await fetch("http://localhost:3001/contacts", {
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//           },
-//         });
-            
-//         const result = await res.json();
-//         //console.log("DATA", data)
-//         setContacts(result.data);
-//       } catch (err) {
-//         console.error("Error cargando contactos", err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     if (token) fetchContacts();
-//   }, [token]);
 
 // const fetchContacts = async () => {
 //   try {
 
+//     const params = new URLSearchParams();
 
-//     const res = await fetch("http://localhost:3001/contacts", {
+
+
+//     if (status && status !== "all") {
+//   params.append("status", status);
+// }
+// params.append("page", page.toString())
+// params.append("limit", limit.toString())
+// const query = params.toString();
+
+// const url = query
+//   ? `http://localhost:3001/contacts?${query}`
+//   : `http://localhost:3001/contacts`;
+
+
+//     const res = await fetch(url, {
 //       headers: {
 //         Authorization: `Bearer ${token}`,
 //       },
 //     });
 
 //     const result = await res.json();
-//     setContacts(result.data);
+   
+//     setContacts(result.data || []);
+//     if (!Array.isArray(result)) {
+//   setTotalPages(result.totalPages || 1);
+  
+// }
+//   //ver data
+//     console.log(result.data)
+    
+
 //   } catch (err) {
 //     console.error("Error cargando contactos", err);
+//     setContacts([])
 //   } finally {
 //     setLoading(false);
 //   }
 // };
 
-const fetchContacts = async () => {
-  try {
-    // let url = "http://localhost:3001/contacts";
+// //escuchar todos los cambios
+// useEffect(() => {
+//   if (token) {
+//     setLoading(true);
+//     fetchContacts();
+//   }
+// }, [token, refreshKey,status,page]);
 
-    // if (status !== "all") {
-    //   url += `?status=${status}`;
-    // 
-    const params = new URLSearchParams();
+//   if (loading) return <ContactsSkeleton/>
 
-    // if (status) params.append("status", status);
+//   return (
+//     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+//       <Table>
+//         <TableHeader className="bg-slate-50/40">
+//           <TableRow>
+//             <TableHead>Nombre</TableHead>
+//             <TableHead>Email</TableHead>
+//             <TableHead>Teléfono</TableHead>
+//             <TableHead>Estado</TableHead>
+//           </TableRow>
+//         </TableHeader>
 
-    // const url = `http://localhost:3001/contacts?${params.toString()}`;    
+//         <TableBody>
+//           {contacts.map((contact) => (
+//             <TableRow key={contact.id}>
+//               <TableCell>
+//                 <div className="flex items-center gap-2">
+//                   <Avatar className="h-8 w-8 bg-indigo-50">
+//                     <AvatarFallback>
+//                       {contact.name.slice(0, 2).toUpperCase()}
+//                     </AvatarFallback>
+//                   </Avatar>
+//                   {contact.name}
+//                 </div>
+//               </TableCell>
 
-    if (status && status !== "all") {
-  params.append("status", status);
-}
+//               <TableCell>{contact.email || "—"}</TableCell>
+//               <TableCell>{contact.phone}</TableCell>
 
-const query = params.toString();
-const url = query
-  ? `http://localhost:3001/contacts?${query}`
-  : `http://localhost:3001/contacts`;
+//               <TableCell>
+//                 <StatusBadge status={contact.status} />
+//               </TableCell>
+//             </TableRow>
+//           ))}
+//         </TableBody>
+//       </Table>
+//       <ContactsPagination
+//   totalPages={totalPages}
+//   currentPage={page}
+// />
+//     </div>
+//   );
+// }
 
 
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+export function ContactsTable() {
+  const token = useAuthStore((state) => state.token);
+  const { refreshKey, page, status, setPage, search } = useContactsStore(); 
 
-    const result = await res.json();
-    const data = Array.isArray(result)
-    ? result
-    : result.data;
-    setContacts(data || []);
-    console.log(result.data)
-  } catch (err) {
-    console.error("Error cargando contactos", err);
-    setContacts([])
-  } finally {
-    setLoading(false);
-  }
-};
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 15;
 
-//escuchar todos los cambios
-useEffect(() => {
-  if (token) {
-    setLoading(true);
+  useEffect(() => {
+    const fetchContacts = async () => {
+      if (!token) return;
+      
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+        });
+
+        if (status && status !== "all") {
+          params.append("status", status);
+        }
+        if (search) {
+        params.append("busqueda", search);
+        }
+        const res = await fetch(`http://localhost:3001/contacts?${params}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) throw new Error("Error en la respuesta");
+
+        const result = await res.json();
+        
+        // Estructura esperada: { data: Contact[], totalPages: number }
+        setContacts(result.data || []);
+        setTotalPages(result.totalPages || 1);
+      } catch (err) {
+        console.error("Error cargando contactos", err);
+        setContacts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchContacts();
-  }
-}, [token, refreshKey,status]);
+  }, [token, refreshKey, status, page, search]); // Se ejecuta cuando cualquiera cambia
 
-  if (loading) return <ContactsSkeleton/>
+  if (loading) return <ContactsSkeleton />;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
       <Table>
         <TableHeader className="bg-slate-50/40">
-          <TableRow>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Teléfono</TableHead>
-            <TableHead>Estado</TableHead>
-          </TableRow>
-        </TableHeader>
+           <TableRow>
+             <TableHead>Nombre</TableHead>
+             <TableHead>Email</TableHead>
+             <TableHead>Teléfono</TableHead>
+             <TableHead>Estado</TableHead>
+           </TableRow>
+         </TableHeader>
 
         <TableBody>
-          {contacts.map((contact) => (
-            <TableRow key={contact.id}>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-8 w-8 bg-indigo-50">
-                    <AvatarFallback>
-                      {contact.name.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  {contact.name}
-                </div>
-              </TableCell>
+          {contacts.length > 0 ? (
+            contacts.map((contact) => (
+              <TableRow key={contact.id}>
+                <TableCell>
+                 <div className="flex items-center gap-2">
+                   <Avatar className="h-8 w-8 bg-indigo-50">
+                     <AvatarFallback>
+                       {contact.name.slice(0, 2).toUpperCase()}
+                     </AvatarFallback>
+                   </Avatar>
+                   {contact.name}
+                 </div>
+               </TableCell>
 
-              <TableCell>{contact.email || "—"}</TableCell>
-              <TableCell>{contact.phone}</TableCell>
+               <TableCell>{contact.email || "—"}</TableCell>
+               <TableCell>{contact.phone}</TableCell>
 
-              <TableCell>
-                <StatusBadge status={contact.status} />
+               <TableCell>
+                 <StatusBadge status={contact.status} />
+               </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center py-10 text-slate-500">
+                No se encontraron contactos.
               </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
+      
+      <ContactsPagination totalPages={totalPages} currentPage={page} />
     </div>
   );
+   
+  
 }
