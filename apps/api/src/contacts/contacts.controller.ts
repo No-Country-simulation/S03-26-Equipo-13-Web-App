@@ -30,8 +30,9 @@ export class ContactsController {
     @Query('status') status?: string,
     @Query('busqueda') busqueda?: string,
     @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.contactsService.findAll(status, busqueda, Number(page) || 1);
+    return this.contactsService.findAll(status, busqueda, Number(page) || 1, Number(limit) || 10);
   }
 
   @Get(':id')
