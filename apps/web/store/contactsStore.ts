@@ -8,11 +8,15 @@ type ContactsStore = {
   page: number;
   search: string;
 
+  selectedId: string | null;
 
   setStatus:(status:Status) => void;
   setPage : (page:number) => void;
   setSearch : (search: string) => void;
   triggerRefresh: () => void;
+  
+  setSelectedId: (id: string | null) => void;
+
 };
 
 export const useContactsStore = create<ContactsStore>((set) => ({
@@ -20,12 +24,14 @@ export const useContactsStore = create<ContactsStore>((set) => ({
   status: "all",
   page:1,
   search : "",
+  selectedId: null,
 
   
   
   setStatus: (status) => set({status, page:1}),
   setPage: (page) => set({ page }),
-
+  setSelectedId: (id) => set({ selectedId: id }),
+  
   setSearch: (search) =>
     set(() => ({
       search,

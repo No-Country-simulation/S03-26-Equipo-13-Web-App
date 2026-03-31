@@ -6,21 +6,30 @@ import { CreateContactDialog } from "./contact-dialog";
 import { ContactsFilters } from "./contacts-filter";
 import { ContactsSearch } from "./contacts-search";
 
+
+
 export function ContactsView() {
-
-
-
   return (
-    <>
-      <div className="flex justify-end mb-4">
-        <CreateContactDialog  />
+    <div className="space-y-6 p-4"> 
+      
+      {/*Botones arriba dere */}
+      <div className="flex justify-end">
+        <CreateContactDialog />
       </div>
-      <div className="flex items-center gap-3 flex-1 min-w-[300px]">
-       <ContactsSearch/>
-        <ContactsFilters />
-        </div>
 
-      <ContactsTable  />
-    </>
+      {/*Barra de búsqueda y filtros */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex-1 min-w-[300px]">
+          <ContactsSearch />
+        </div>
+        <ContactsFilters />
+      </div>
+
+      {/* La tabla ABAJO y ocupando todo el ancho */}
+      <div className="w-full">
+        <ContactsTable />
+      </div>
+      
+    </div>
   );
 }
