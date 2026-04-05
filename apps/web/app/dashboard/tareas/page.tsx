@@ -1,4 +1,6 @@
 
+
+/* 
 import { Plus } from 'lucide-react';
 import {
     Table,
@@ -22,7 +24,7 @@ const taskList = [
 export default function TareasPage() {
     return (
         <div className="bg-slate-50/30">
-            {/* Header de Filtros y Acciones */}
+           Header de Filtros y Acciones 
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                 <div className="flex bg-slate-100/80 p-0.5 rounded-lg border border-slate-200">
                     {['Todas', 'Pendientes', 'Vencidas', 'Completadas'].map((tab, i) => (
@@ -44,7 +46,7 @@ export default function TareasPage() {
                 </Button>
             </div>
 
-            {/* Tabla de Tareas (Clon de ContactPage) */}
+      Tabla de Tareas (Clon de ContactPage) 
             <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
                 <Table>
                     <TableHeader className="bg-slate-50/40">
@@ -108,4 +110,15 @@ function StatusBadgeTask({ status }: { status: string }) {
             {status}
         </Badge>
     );
+} */
+import TaskProviders from "@/store/providers/TaskProvider";
+import TasksClient from "@/components/tasks/tasks-client";
+
+export default function TareasPage() {
+  return(
+    <TaskProviders>
+        <TasksClient />
+    </TaskProviders>
+
+  ) 
 }
