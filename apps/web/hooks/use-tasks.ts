@@ -116,7 +116,6 @@ export function useCreateTask() {
       const payload = {
         ...rest,
         // Si 'done' es true, mandamos el status "done", de lo contrario "pending"
-        // (Ajusta esta lógica según necesites otros estados)
         status: done === true ? "done" : (rest.status || "pending"),
       };
 

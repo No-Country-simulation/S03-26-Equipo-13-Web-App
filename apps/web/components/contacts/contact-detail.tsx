@@ -20,6 +20,12 @@ export default function ContactDetail() {
   const [contact, setContact] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
+  const styles: Record<string, string> = {
+    pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+    done: "bg-green-50 text-green-700 border-green-200",
+    cancelled: "bg-red-50 text-red-700 border-red-200",
+  };
+
   useEffect(() => {
     if (!selectedId || !token) return;
 
@@ -76,14 +82,29 @@ export default function ContactDetail() {
                 </div>
               ))}
             </div>
-
             <div className="mt-6">
-              <h2 className="font-semibold">Tareas</h2>
-              {contact.tasks?.map((t: any) => (
-                <div key={t.id} className="text-sm border-b py-1">
-                  {t.title}
-                </div>
-              ))}
+              <h2 className="font-semibold mb-3 text-gray-800">Tareas</h2>
+              <div className="flex flex-col gap-2">
+                {contact.tasks?.map((t: any) => (
+                  <div
+                    key={t.id}
+                    className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
+                  >
+                    <span className="text-sm font-medium text-gray-700">
+                      {t.title}
+                    </span>
+
+                    <span
+                      className={`
+          px-2.5 py-0.5 rounded-full text-xs  border
+          ${styles[t.status] || "bg-gray-50 text-gray-600 border-gray-200"}
+        `}
+                    >
+                      {t.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         ) : null}
