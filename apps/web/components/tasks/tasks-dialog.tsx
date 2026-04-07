@@ -18,7 +18,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import ContactSelect from "./contact-select";
+import ContactSelect from "./task-contact-select";
 
 export default function TaskCreateDialog() {
   const [open, setOpen] = useState(false);
