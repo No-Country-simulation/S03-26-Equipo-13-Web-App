@@ -5,7 +5,7 @@ export const taskSchema = z.object({
   dueDate: z.string().min(1, "La fecha es obligatoria"),
   contactId: z.string().uuid("Selecciona un contacto válido"),
   description: z.string().optional(),
-  status: z.enum(["pending", "in_progress", "done", "cancelled"])
+  //status: z.enum(["pending", "in_progress", "done", "cancelled"])
 
 });
 

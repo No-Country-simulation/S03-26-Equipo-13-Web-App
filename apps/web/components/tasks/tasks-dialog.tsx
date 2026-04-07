@@ -31,6 +31,7 @@ export default function TaskCreateDialog() {
       dueDate: "",
       contactId: "",
       description: "",
+      //status:"pending"
     },
   });
 
@@ -90,7 +91,7 @@ export default function TaskCreateDialog() {
           <div>
             <ContactSelect
               value={form.watch("contactId")}
-              onChange={(value) => form.setValue("contactId", value)}
+              onChange={(value) => form.setValue("contactId", value, { shouldValidate: true })}
             />
 
             {form.formState.errors.contactId && (

@@ -6,7 +6,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export function ContactsSkeleton() {
+export function TableSkeleton() {
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
       <Table>

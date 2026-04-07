@@ -16,6 +16,8 @@ export async function fetchWithAuth(
   });
 
   if (!res.ok) {
+    const errorData = await res.json(); 
+  console.error("RESPUESTA ERROR BACKEND:", errorData)
     throw new Error("API Error");
   }
 

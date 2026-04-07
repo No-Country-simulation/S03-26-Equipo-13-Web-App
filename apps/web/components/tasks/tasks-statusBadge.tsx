@@ -2,20 +2,22 @@
 
 import { Badge } from "@/components/ui/badge";
 
-
 export default function StatusBadgeTask({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    CANCELLED: "bg-red-50 text-red-600",
-    DONE: "bg-green-50 text-green-600",
+    pending: "bg-yellow-50 text-yellow-600",
+    done: "bg-green-50 text-green-600",
+    cancelled: "bg-red-50 text-red-600",
   };
 
-  if (status === "PENDING") {
-    return <span className="text-xs text-slate-300">—</span>;
-  }
+  const labels: Record<string, string> = {
+    pending: "Pendiente",
+    done: "Completada",
+    cancelled: "Cancelada",
+  };
 
   return (
     <Badge className={`${styles[status]} text-[10px] px-2 py-0 rounded-full`}>
-      {status}
+      {labels[status] ?? status}
     </Badge>
   );
 }
