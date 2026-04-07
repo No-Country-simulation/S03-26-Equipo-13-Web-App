@@ -15,7 +15,7 @@ import {
 import { StatusBadge } from "./status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useContactsStore } from "@/store/contactsStore";
-import { ContactsSkeleton } from "./contacts-skeleton";
+import { TableSkeleton } from "../ui/table-skeleton";
 import { ContactsPagination } from "./contacts-pagination";
 import { EditContactDialog } from "./contact-edit";
 import ContactDetail from "./contact-detail";
@@ -87,7 +87,7 @@ export function ContactsTable() {
     fetchContacts();
   }, [token, refreshKey, status, page, search]); // Se ejecuta cuando cualquiera cambia
 
-  if (loading) return <ContactsSkeleton />;
+  if (loading) return <TableSkeleton />;
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">

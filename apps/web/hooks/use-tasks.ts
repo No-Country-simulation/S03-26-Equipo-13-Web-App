@@ -4,30 +4,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fetchWithAuth } from "@/lib/api";
 import { API_URL } from "@/lib/config";
+import { TaskFormValues } from "@/lib/validators/task";
+import { TaskStatus, Task } from "@/store/useTasksStore";
 
-// ==============================
-// TYPES
-// ==============================
-export type TaskStatus = "PENDING" | "DONE" | "CANCELLED";
 
-export interface Task {
-  id: string;
-  title: string;
-  done: boolean;
-  status: TaskStatus;
-  date: string;
-  contact?: {
-    id: string;
-    name: string;
-  };
-}
 
 // ==============================
 // GET TASKS
 // ==============================
 export function useTasks(filters?: { status?: TaskStatus; contact?: string }) {
   return useQuery({
-    queryKey: ["tasks", filters],
+    queryKey: ["tasks", filters?.status, filters?.contact],
 
     queryFn: async (): Promise<Task[]> => {
       const params = new URLSearchParams();
@@ -50,15 +37,21 @@ export function useCreateTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: {
-      title: string;
-      dueDate: string;
-      contactId?: string;
-      description?: string;
-    }) => {
+    mutationFn: async (data: TaskFormValues) => {
+      
+        const payload = {
+        title: data.title,
+        contactId: data.contactId,
+               ...(data.description ? { description: data.description } : {}),
+               ...(data.dueDate ? { dueDate: new Date(data.dueDate).toISOString() } : {}),
+      };
+
+
+      console.log("Enviando al back :", payload);
+
       return fetchWithAuth(`${API_URL}/tasks`, {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
     },
 
@@ -67,7 +60,8 @@ export function useCreateTask() {
       toast.success("Tarea creada correctamente");
     },
 
-    onError: () => {
+    onError: (error) => {
+      console.log("Error detallado del back" , error)
       toast.error("Error al crear tarea");
     },
   });
@@ -136,7 +130,7 @@ export function useCreateTask() {
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
-      // toast.success("Tarea actualizada"); // Opcional
+       toast.success("Tarea actualizada"); // Opcional
     },
 
     onError: () => {

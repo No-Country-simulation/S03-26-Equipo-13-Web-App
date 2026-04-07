@@ -9,9 +9,9 @@ export default function TasksHeader() {
 
   const tabs = [
     { label: "Todas", value: undefined },
-    { label: "Pendientes", value: "PENDING" },
-    { label: "Canceladas", value: "CANCELLED" },
-    { label: "Completadas", value: "DONE" },
+    { label: "Pendientes", value: "pending" },
+    { label: "Canceladas", value: "cancelled" },
+    { label: "Completadas", value: "done" },
   ];
 
   return (

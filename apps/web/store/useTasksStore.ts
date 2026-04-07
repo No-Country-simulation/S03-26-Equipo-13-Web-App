@@ -1,13 +1,14 @@
 import { create } from "zustand";
 
-type TaskStatus = "PENDING" | "DONE" | "CANCELLED";
+//type TaskStatus = "PENDING" | "DONE" | "CANCELLED";
+ export type TaskStatus = "pending" | "in_progress" | "done" | "cancelled"
 
-interface Task {
+export interface Task {
   id: string;
   title: string;
   done: boolean;
   status: TaskStatus;
-  date: string;
+  dueDate?: string;
   contact?: {
     name: string;
   };
