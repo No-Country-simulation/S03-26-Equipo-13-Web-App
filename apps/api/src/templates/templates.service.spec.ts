@@ -45,11 +45,29 @@ describe('TemplatesService', () => {
 
   describe('create', () => {
     it('should create and return a template', async () => {
+      // 1. Mock the global fetch response
+      global.fetch = jest.fn().mockResolvedValue({
+        json: jest.fn().mockResolvedValue({ id: 'meta-tpl-123' }), // Success from Meta
+      });
+
       mockPrismaTemplate.create.mockResolvedValue(mockTemplate);
-      const dto = { name: 'Bienvenida', content: 'Hola {{1}}', category: TemplateCategory.marketing };
+
+      const dto = {
+        name: 'Bienvenida',
+        content: 'Hola {{1}}',
+        category: TemplateCategory.marketing,
+      };
+
       const result = await service.create(dto);
+
+      // 2. Assert fetch was called with the right data
+      expect(global.fetch).toHaveBeenCalled();
+
+      // 3. Assert DB was updated
       expect(mockPrismaTemplate.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: dto }),
+        expect.objectContaining({
+          data: expect.objectContaining({ name: 'bienvenida' }),
+        }),
       );
       expect(result).toEqual(mockTemplate);
     });
