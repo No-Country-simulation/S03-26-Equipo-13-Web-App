@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
 
 import { AuthProvider } from "@/store/providers/AuthProvider";
+import { QueryProvider } from "@/store/providers/QueryProvider";
 
 /* fuentes por defecto de NEXT */
 const geistSans = Geist({
@@ -37,9 +38,11 @@ export default function RootLayout({
       <body
         className={`${dm_sans.className} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <QueryProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );
