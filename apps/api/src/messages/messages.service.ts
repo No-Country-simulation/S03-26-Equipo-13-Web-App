@@ -2,8 +2,10 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessagesGateway } from './messages.gateway';
 import { WhatsappApiService } from './whatsapp-api.service';
+import { BrevoApiService } from './brevo-api.service';
 import { SendWhatsappDto, SendEmailDto } from './messages.dto';
 import { MessageDirection, MessageChannel, MessageStatus } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MessagesService {
@@ -13,7 +15,9 @@ export class MessagesService {
     private readonly prisma: PrismaService,
     private readonly gateway: MessagesGateway,
     private readonly whatsappApi: WhatsappApiService,
-  ) {}
+    private readonly brevoApi: BrevoApiService,
+
+  ) { }
 
   // ── GET /messages?contactId= ───────────────────────────────────────────────
   async findByContact(contactId: string) {
@@ -39,11 +43,11 @@ export class MessagesService {
     // Build the Meta payload
     const metaPayload = dto.templateName
       ? this.whatsappApi.buildTemplatePayload(
-          contact.phone,
-          dto.templateName,
-          dto.templateVariables ?? [],
-          dto.languageCode ?? 'es',
-        )
+        contact.phone,
+        dto.templateName,
+        dto.templateVariables ?? [],
+        dto.languageCode ?? 'es',
+      )
       : this.whatsappApi.buildTextPayload(contact.phone, dto.content!);
 
     // Call Meta Cloud API — throws BadGatewayException on failure
@@ -72,7 +76,15 @@ export class MessagesService {
     if (!contact) throw new NotFoundException(`Contacto ${dto.contactId} no encontrado`);
 
     // TODO: call Brevo SMTP once BREVO_API_KEY is configured
-    this.logger.log(`[Email] → ${contact.email}: ${dto.subject}`);
+    // this.logger.log(`[Email] → ${contact.email}: ${dto.subject}`);
+
+    if (!contact.email) throw new BadRequestException(`El contacto no tiene email válido.`);
+    await this.brevoApi.sendEmail(
+      contact.email,
+      contact.name,
+      dto.subject,
+      dto.content
+    );
 
     const message = await this.prisma.message.create({
       data: {
