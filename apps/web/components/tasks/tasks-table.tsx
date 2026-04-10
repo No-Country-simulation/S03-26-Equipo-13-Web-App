@@ -20,7 +20,8 @@ import { Button } from "../ui/button";
 import TaskDetailDialog from "./tasks-detail-dialog";
 
 export default function TasksTable() {
-  const { filter, openDetail, isDetailOpen, selectedTaskId, closeDetail } = useTasksStore();
+  const { filter, openDetail, isDetailOpen, selectedTaskId, closeDetail } =
+    useTasksStore();
   const { data: tasks = [], isLoading } = useTasks({
     status: filter,
   });
@@ -29,7 +30,6 @@ export default function TasksTable() {
   const { isEditOpen, closeEdit } = useTasksStore();
 
   const updateTask = useUpdateTask();
-
 
   const handleToggle = (task: any) => {
     const isDone = task.status === "done";
@@ -57,8 +57,6 @@ export default function TasksTable() {
     });
   };
 
-  
- 
   return (
     <div className="bg-white border rounded-xl overflow-hidden">
       <Table>
@@ -87,12 +85,11 @@ export default function TasksTable() {
             const isDone = task.status === "done";
             const isCancel = task.status === "cancelled";
             return (
-              <TableRow 
-              key={task.id}
-              onClick={() => openDetail(task.id)}
-              className="cursor-pointer hover:bg-slate-50"
-              >
+              <TableRow
+                key={task.id}
                 
+                className="cursor-pointer hover:bg-slate-50"
+              >
                 {/* CHECKBOX */}
                 <TableCell>
                   <Checkbox
@@ -107,7 +104,7 @@ export default function TasksTable() {
                 </TableCell>
 
                 {/* TITLE */}
-                <TableCell>
+                <TableCell onClick={() => openDetail(task.id)} >
                   <span
                     className={`
                         text-sm font-medium
@@ -144,24 +141,27 @@ export default function TasksTable() {
                 <TableCell className="text-right space-x-2">
                   {task.status !== "cancelled" ? (
                     <>
-                    <Button 
-                    variant="outline" size="sm"
-                    onClick={(e) => {e.stopPropagation(), handleEdit(task)}}
-                  >
-                    Editar
-                  </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          (e.stopPropagation(), handleEdit(task));
+                        }}
+                      >
+                        Editar
+                      </Button>
 
-                  <Button
-                    onClick={() => handleCancel(task)}
-                    variant="destructive" size="sm"
-                  >
-                    Cancelar
-                  </Button>
+                      <Button
+                        onClick={() => handleCancel(task)}
+                        variant="destructive"
+                        size="sm"
+                      >
+                        Cancelar
+                      </Button>
                     </>
-                  ) :(
-                     <span className="text-xs text-slate-400">—</span>
-                    )}
-               
+                  ) : (
+                    <span className="text-xs text-slate-400">—</span>
+                  )}
                 </TableCell>
               </TableRow>
             );
@@ -175,11 +175,11 @@ export default function TasksTable() {
         task={selectedTask}
       />
 
-          <TaskDetailDialog
-  open={isDetailOpen}
-  onClose={closeDetail}
-  task={selectedTask}
-/>
+      <TaskDetailDialog
+        open={isDetailOpen}
+        onClose={closeDetail}
+        task={selectedTask}
+      />
       <div className="p-3 border-t text-xs text-slate-400">
         Mostrando {tasks.length} tareas
       </div>
