@@ -10,6 +10,7 @@ import { MessagesModule } from './messages/messages.module';
 import { FlowsModule } from './flows/flows.module';
 import { TemplatesModule } from './templates/templates.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     FlowsModule,
     TemplatesModule,
     AnalyticsModule,
+    EmailModule,
   ],
 })
 export class AppModule {}

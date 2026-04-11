@@ -97,4 +97,18 @@ export class ContactsService {
     await this.findOne(id);
     return this.prisma.contact.delete({ where: { id } });
   }
+
+  // ── Tags CRUD ──────────────────────────────────────────────────────────────
+  async listTags() {
+    return this.prisma.tag.findMany({ orderBy: { name: 'asc' } });
+  }
+
+  async createTag(name: string) {
+    const clean = name.trim().toLowerCase().replace(/\s+/g, '-');
+    return this.prisma.tag.upsert({ where: { name: clean }, update: {}, create: { name: clean } });
+  }
+
+  async deleteTag(id: string) {
+    return this.prisma.tag.delete({ where: { id } });
+  }
 }

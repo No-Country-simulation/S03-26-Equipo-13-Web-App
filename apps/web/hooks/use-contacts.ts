@@ -15,8 +15,7 @@ export function useContacts() {
     queryKey: ["contacts"],
     queryFn: async (): Promise<Contact[]> => {
       const res = await fetchWithAuth(`${API_URL}/contacts`);
-      console.log("CONTACTS FECTH",res.data)
-      return res.data; 
+      return res.data;
     },
     staleTime: 1000 * 60 * 5,
   });

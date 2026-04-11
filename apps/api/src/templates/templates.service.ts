@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateTemplateDto } from './templates.dto';
 
@@ -9,7 +10,10 @@ type MetaApprovalStatus = 'APPROVED' | 'REJECTED' | 'PENDING';
 export class TemplatesService {
   private readonly logger = new Logger(TemplatesService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   async findAll() {
     // Returns all templates; the `category` field encodes the Meta approval status in practice
@@ -19,12 +23,14 @@ export class TemplatesService {
   async create(dto: CreateTemplateDto) {
     // Limpiamos el nombre para que Meta no lo rechace (sin espacios, minúsculas)
     const metaName = dto.name.toLowerCase().trim().replace(/\s+/g, '_');
-    const metaUrl = `https://graph.facebook.com/v22.0/${process.env.WHATSAPP_BUSINESS_ACCOUNT_ID}/message_templates`;
+    const businessAccountId = this.config.getOrThrow<string>('WHATSAPP_BUSINESS_ACCOUNT_ID');
+    const token = this.config.getOrThrow<string>('WHATSAPP_TOKEN');
+    const metaUrl = `https://graph.facebook.com/v19.0/${businessAccountId}/message_templates`;
     try {
       const response = await fetch(metaUrl, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

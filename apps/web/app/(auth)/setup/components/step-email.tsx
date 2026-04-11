@@ -2,7 +2,7 @@ import ProgressSteps from "./progress-steps";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function StepEmail() {
+export default function StepEmail({ onNext }: { onNext?: () => void }) {
   return (
     <div className="space-y-5">
 
@@ -60,7 +60,7 @@ export default function StepEmail() {
 
       {/* GMAIL FORM */}
       <div>
-        <Button className="w-full bg-[var(--brand)]">
+        <Button onClick={onNext} className="w-full bg-[var(--brand)]">
           Continuar con Google
         </Button>
       </div>
@@ -90,8 +90,8 @@ export default function StepEmail() {
           <Input type="password" placeholder="••••••••••" />
         </div>
 
-        <Button className="w-full bg-[var(--brand)]">
-                     Probar y conectar
+        <Button onClick={onNext} className="w-full bg-[var(--brand)]">
+          Probar y conectar
         </Button>
 
       </div>

@@ -11,6 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 import { useAuthStore } from "@/store/authStore";
+import { API_URL } from "@/lib/config";
 
 import {
   Form,
@@ -39,7 +40,7 @@ export function LoginForm() {
   async function onSubmit(data: LoginInput) {
     setServerError(null);
     try {
-      const response = await fetch("http://localhost:3001/auth/login", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

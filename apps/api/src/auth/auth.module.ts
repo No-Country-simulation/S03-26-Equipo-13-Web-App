@@ -26,9 +26,13 @@ import Redis from 'ioredis';
   imports: [
     PrismaModule,
     ConfigModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'tu-clave-secreta',
-      signOptions: { expiresIn: '24h' },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        secret: config.getOrThrow<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '7d' },
+      }),
+      inject: [ConfigService],
     }),
   ],
   exports: [AuthService],

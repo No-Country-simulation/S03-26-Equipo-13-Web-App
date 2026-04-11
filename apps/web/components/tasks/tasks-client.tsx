@@ -18,7 +18,7 @@ export default function TasksClient() {
   return (
     <div className="bg-slate-50/30">
       <TasksHeader />
-      <TasksTable isLoading={isLoading} />
+      <TasksTable />
     </div>
   );
 }

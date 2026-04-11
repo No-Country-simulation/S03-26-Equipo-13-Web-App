@@ -15,10 +15,18 @@ export async function fetchWithAuth(
     },
   });
 
+  // Token expirado o inválido → cerrar sesión y redirigir al login
+  if (res.status === 401) {
+    useAuthStore.getState().logout();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new Error("Sesión expirada. Por favor ingresá nuevamente.");
+  }
+
   if (!res.ok) {
-    const errorData = await res.json(); 
-  console.error("RESPUESTA ERROR BACKEND:", errorData)
-    throw new Error("API Error");
+    const errorData = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(errorData?.message || `Error ${res.status}`);
   }
 
   return res.json();

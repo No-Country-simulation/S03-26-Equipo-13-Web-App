@@ -1,7 +1,10 @@
+"use client";
+import { useRouter } from "next/navigation";
 import ProgressSteps from "./progress-steps";
 import { Button } from "@/components/ui/button";
 
 export default function StepDone() {
+  const router = useRouter();
   return (
     <div className="space-y-6 text-center">
 
@@ -64,7 +67,7 @@ export default function StepDone() {
       </div>
 
       {/* CTA */}
-      <Button className="w-full bg-[var(--brand)]">
+      <Button onClick={() => router.push("/dashboard")} className="w-full bg-[var(--brand)]">
         Entrar al CRM →
       </Button>
 

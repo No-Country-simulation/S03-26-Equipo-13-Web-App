@@ -3,7 +3,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { MessagesGateway } from './messages.gateway';
 import { WhatsappApiService } from './whatsapp-api.service';
 import { BrevoApiService } from './brevo-api.service';
-import { SendWhatsappDto, SendEmailDto } from './messages.dto';
+import { SendWhatsappDto, SendEmailByContactDto } from './messages.dto';
 import { MessageDirection, MessageChannel, MessageStatus } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 
@@ -71,7 +71,7 @@ export class MessagesService {
   }
 
   // ── POST /messages/email ───────────────────────────────────────────────────
-  async sendEmail(dto: SendEmailDto) {
+  async sendEmail(dto: SendEmailByContactDto) {
     const contact = await this.prisma.contact.findUnique({ where: { id: dto.contactId } });
     if (!contact) throw new NotFoundException(`Contacto ${dto.contactId} no encontrado`);
 

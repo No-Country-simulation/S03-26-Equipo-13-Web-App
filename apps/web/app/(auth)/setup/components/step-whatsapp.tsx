@@ -2,7 +2,7 @@ import ProgressSteps from "./progress-steps";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export default function StepWhatsapp() {
+export default function StepWhatsapp({ onNext }: { onNext?: () => void }) {
   return (
     <div className="space-y-4">
 
@@ -34,8 +34,8 @@ export default function StepWhatsapp() {
         Una sola cuenta por usuario.
       </div>
 
-      <Button className="w-full bg-[var(--brand)]">
-        Enviar código
+      <Button onClick={onNext} className="w-full bg-[var(--brand)]">
+        Enviar código →
       </Button>
 
     </div>

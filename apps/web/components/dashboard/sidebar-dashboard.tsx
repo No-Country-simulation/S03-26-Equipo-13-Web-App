@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 import {
     LayoutDashboard,
     Users,
@@ -36,6 +37,7 @@ const menuGroups = [
 
 export function Sidebar() {
     const pathname = usePathname();
+    const user = useAuthStore((state) => state.user);
 
 
     const activeStyle = (isActive: boolean) => isActive ? {
@@ -138,11 +140,11 @@ export function Sidebar() {
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-xs"
                         style={{ backgroundColor: 'rgba(var(--brand-primary), 0.08)', color: 'var(--color-brand)' }}
                     >
-                        TU
+                        {user?.name?.slice(0, 2).toUpperCase() ?? "??"}
                     </div>
                     <div className="min-w-0">
-                        <p className="text-[11px] font-bold text-slate-900 truncate leading-tight">Tu nombre</p>
-                        <p className="text-[9px] text-slate-400 truncate font-medium">agente@startup.com</p>
+                        <p className="text-[11px] font-bold text-slate-900 truncate leading-tight">{user?.name ?? "—"}</p>
+                        <p className="text-[9px] text-slate-400 truncate font-medium">{user?.email ?? "—"}</p>
                     </div>
                 </div>
             </div>

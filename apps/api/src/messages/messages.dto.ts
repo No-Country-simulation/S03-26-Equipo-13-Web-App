@@ -42,7 +42,7 @@ export class SendWhatsappDto {
   languageCode?: string;
 }
 
-export class SendEmailDto {
+export class SendEmailByContactDto {
   @ApiProperty({ description: 'ID del contacto destinatario' })
   @IsUUID()
   contactId: string;

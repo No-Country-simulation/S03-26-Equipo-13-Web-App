@@ -1,7 +1,7 @@
 import ProgressSteps from "./progress-steps";
 import { Button } from "@/components/ui/button";
 
-export default function StepVerify() {
+export default function StepVerify({ onNext, onBack }: { onNext?: () => void; onBack?: () => void }) {
   return (
     <div className="space-y-5">
 
@@ -46,12 +46,12 @@ export default function StepVerify() {
 
       {/* ACTIONS */}
       <div className="flex gap-2">
-        <Button variant="outline" className="flex-1">
+        <Button variant="outline" onClick={onBack} className="flex-1">
           ← Cambiar
         </Button>
 
-        <Button className="flex-1 bg-[var(--brand)]">
-          Confirmar
+        <Button onClick={onNext} className="flex-1 bg-[var(--brand)]">
+          Confirmar →
         </Button>
       </div>
 

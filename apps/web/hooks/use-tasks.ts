@@ -47,8 +47,6 @@ export function useCreateTask() {
       };
 
 
-      console.log("Enviando al back :", payload);
-
       return fetchWithAuth(`${API_URL}/tasks`, {
         method: "POST",
         body: JSON.stringify(payload),
@@ -60,8 +58,7 @@ export function useCreateTask() {
       toast.success("Tarea creada correctamente");
     },
 
-    onError: (error) => {
-      console.log("Error detallado del back" , error)
+    onError: () => {
       toast.error("Error al crear tarea");
     },
   });
@@ -118,8 +115,6 @@ export function useCreateTask() {
         // Si 'done' es true, mandamos el status "done", de lo contrario "pending"
         status: done === true ? "done" : (rest.status || "pending"),
       };
-
-      console.log("Payload que realmente sale al Back:", payload);
 
       return fetchWithAuth(`${API_URL}/tasks/${id}`, {
         method: "PATCH",

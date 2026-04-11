@@ -11,6 +11,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { API_URL } from "@/lib/config";
+import { useAuthStore } from "@/store/authStore";
 import {
   Form,
   FormControl,
@@ -27,7 +29,7 @@ export function RegisterForm() {
   } | null>(null);
 
   const router = useRouter();
-
+  const loginAction = useAuthStore((state) => state.login);
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -43,7 +45,7 @@ export function RegisterForm() {
   async function onSubmit(data: RegisterInput) {
     setServerStatus(null);
     try {
-      const response = await fetch("http://localhost:3001/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -55,14 +57,29 @@ export function RegisterForm() {
         throw new Error(result.message || "Error al registrar usuario");
       }
 
+      // Auto-login: hacer login con las mismas credenciales
+      const loginRes = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, password: data.password }),
+      });
+      const loginResult = await loginRes.json();
+
+      if (loginRes.ok && loginResult.access_token) {
+        loginAction(loginResult.access_token, loginResult.refresh_token, loginResult.user);
+        router.push("/dashboard");
+        return;
+      }
+
+      // Fallback: si el auto-login falla, redirigir al login manualmente
       setServerStatus({
         type: 'success',
-        message: "¡Cuenta creada con éxito! Redirigiendo..."
+        message: "¡Cuenta creada con éxito! Redirigiendo al login..."
       });
 
       setTimeout(() => {
         router.push("/login");
-      }, 2000);
+      }, 1500);
 
     } catch (error: any) {
       setServerStatus({ type: 'error', message: error.message });

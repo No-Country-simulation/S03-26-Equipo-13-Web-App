@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useSendEmail } from "@/hooks/use-messages";
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 
 
 export function EmailModal({ contactId }: { contactId: string }) {
 
     const { mutate: sendEmail, isPending } = useSendEmail();
+    const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
 
     const [subject, setSubject] = useState("");
@@ -22,10 +24,10 @@ export function EmailModal({ contactId }: { contactId: string }) {
             { contactId, subject, content },
             {
                 onSuccess: () => {
-                    alert("¡Correo enviado a Brevo!");
+                    queryClient.invalidateQueries({ queryKey: ["email-history", contactId] });
                     setSubject("");
                     setContent("");
-                    setOpen(false); // Cerramos el modal tras el éxito
+                    setOpen(false);
                 },
                 onError: (e) => alert("Error enviando: " + e.message)
             }

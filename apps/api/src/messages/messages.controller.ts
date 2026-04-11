@@ -19,7 +19,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { MessagesService } from './messages.service';
-import { SendWhatsappDto, SendEmailDto } from './messages.dto';
+import { SendWhatsappDto, SendEmailByContactDto } from './messages.dto';
 import { Public } from 'src/common/decorators/public.decorator';
 
 @ApiTags('messages')
@@ -66,10 +66,10 @@ export class MessagesController {
     summary: 'Enviar email vía Brevo SMTP',
     description: 'Envía un email al contacto usando Brevo. Requiere BREVO_API_KEY en .env.',
   })
-  @ApiBody({ type: SendEmailDto })
+  @ApiBody({ type: SendEmailByContactDto })
   @ApiResponse({ status: 201, description: 'Email enviado y guardado en BD' })
   @ApiResponse({ status: 404, description: 'Contacto no encontrado' })
-  sendEmail(@Body() dto: SendEmailDto) {
+  sendEmail(@Body() dto: SendEmailByContactDto) {
     return this.messagesService.sendEmail(dto);
   }
 

@@ -103,6 +103,7 @@ model Task {
 
 model Message {
   id        String           @id @default(uuid())
+  subject   String?
   content   String
   direction MessageDirection
   channel   MessageChannel   @default(whatsapp)

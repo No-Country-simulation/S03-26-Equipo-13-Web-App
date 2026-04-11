@@ -1,19 +1,109 @@
 "use client";
 
-import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Search, Mail, MailOpen } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmailModal } from "@/components/email/email-modal";
 import { useContacts } from "@/hooks/use-contacts";
+import { useEmailHistory } from "@/hooks/use-email";
+
+function formatTime(iso: string) {
+    return new Date(iso).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+}
+function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function EmailHistory({ contactId }: { contactId: string }) {
+    const { data: emails = [], isLoading } = useEmailHistory(contactId);
+    const bottomRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [emails]);
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center py-8">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#6366f1] border-t-transparent" />
+            </div>
+        );
+    }
+
+    if (emails.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full py-16 text-slate-400">
+                <Mail className="h-10 w-10 mb-3 text-slate-200" />
+                <p className="text-sm font-medium">Sin correos todavía</p>
+                <p className="text-xs mt-1">Envía el primer email con el botón de arriba</p>
+            </div>
+        );
+    }
+
+    // Group by date
+    const groups: Record<string, typeof emails> = {};
+    [...emails].reverse().forEach((e) => {
+        const dateKey = formatDate(e.createdAt);
+        if (!groups[dateKey]) groups[dateKey] = [];
+        groups[dateKey].push(e);
+    });
+
+    return (
+        <div className="space-y-6 pb-4">
+            {Object.entries(groups).map(([date, msgs]) => (
+                <div key={date}>
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="h-px flex-1 bg-slate-100" />
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{date}</span>
+                        <div className="h-px flex-1 bg-slate-100" />
+                    </div>
+                    <div className="space-y-3">
+                        {msgs.map((email) => {
+                            const isOut = email.direction === "outbound";
+                            return (
+                                <div key={email.id} className={`flex ${isOut ? "justify-end" : "justify-start"}`}>
+                                    <div className={`max-w-[75%] rounded-2xl border shadow-sm overflow-hidden ${isOut ? "rounded-br-none border-indigo-100 bg-indigo-50" : "rounded-bl-none border-slate-100 bg-white"}`}>
+                                        {email.subject && (
+                                            <div className={`px-4 pt-3 pb-1.5 border-b ${isOut ? "border-indigo-100" : "border-slate-100"}`}>
+                                                <p className={`text-[11px] font-bold flex items-center gap-1.5 ${isOut ? "text-indigo-700" : "text-slate-600"}`}>
+                                                    {isOut ? <MailOpen className="w-3 h-3" /> : <Mail className="w-3 h-3" />}
+                                                    {email.subject}
+                                                </p>
+                                            </div>
+                                        )}
+                                        <div className="px-4 py-3">
+                                            <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap"
+                                               dangerouslySetInnerHTML={{ __html: email.content }} />
+                                            <p className={`text-[9px] mt-1.5 text-right ${isOut ? "text-indigo-400" : "text-slate-400"}`}>
+                                                {formatTime(email.createdAt)} · {isOut ? "Enviado" : "Recibido"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            ))}
+            <div ref={bottomRef} />
+        </div>
+    );
+}
 
 export function EmailWorkspace() {
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+    const [search, setSearch] = useState("");
     const { data: contacts = [], isLoading } = useContacts();
 
     // Encontrar datos del contacto activo
     const activeContact = contacts.find((c: any) => c.id === selectedContactId);
+
+    const filtered = contacts.filter((c: any) =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
+    );
 
     return (
         <div className="flex h-[calc(100vh-60px)] overflow-hidden">
@@ -22,13 +112,18 @@ export function EmailWorkspace() {
                 <div className="p-4 pt-6 space-y-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                        <Input placeholder="Buscar..." className="pl-9 h-10 bg-white border-slate-200 rounded-xl text-sm" />
+                        <Input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Buscar..."
+                            className="pl-9 h-10 bg-white border-slate-200 rounded-xl text-sm"
+                        />
                     </div>
                 </div>
 
                 <ScrollArea className="flex-1">
                     {isLoading && <p className="p-4 text-xs text-slate-500">Cargando contactos...</p>}
-                    {contacts.map((contact: any) => {
+                    {filtered.map((contact: any) => {
                         const isSelected = contact.id === selectedContactId;
                         return (
                             <div
@@ -81,10 +176,9 @@ export function EmailWorkspace() {
                             )}
                         </div>
 
-                        {/* Aquí iría el ScrollArea con los mensajes reales que cargaremos en la fase 2 */}
-                        <div className="flex-1 p-8 text-center text-slate-400 text-xs bg-slate-50">
-                            (Aquí dibujaremos el historial)
-                        </div>
+                        <ScrollArea className="flex-1 px-6 py-4">
+                            <EmailHistory contactId={activeContact.id} />
+                        </ScrollArea>
                     </>
                 )}
             </div>

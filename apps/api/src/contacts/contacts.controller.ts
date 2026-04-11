@@ -8,6 +8,8 @@ import {
   Param,
   Query,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -65,5 +67,25 @@ export class ContactsController {
   @ApiOperation({ summary: 'Eliminar contacto — solo rol admin' })
   remove(@Param('id') id: string) {
     return this.contactsService.remove(id);
+  }
+
+  // ── Tags endpoints ─────────────────────────────────────────────────────────
+  @Get('tags')
+  @ApiOperation({ summary: 'Listar todas las etiquetas del sistema' })
+  listTags() {
+    return this.contactsService.listTags();
+  }
+
+  @Post('tags')
+  @ApiOperation({ summary: 'Crear etiqueta nueva' })
+  createTag(@Body('name') name: string) {
+    return this.contactsService.createTag(name);
+  }
+
+  @Delete('tags/:tagId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Eliminar etiqueta' })
+  deleteTag(@Param('tagId') tagId: string) {
+    return this.contactsService.deleteTag(tagId);
   }
 }
