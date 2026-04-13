@@ -5,11 +5,12 @@ import { MessagesService } from './messages.service';
 import { MessagesGateway } from './messages.gateway';
 import { WhatsappApiService } from './whatsapp-api.service';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { BrevoApiService } from './brevo-api.service';
 
 @Module({
   imports: [PrismaModule, ConfigModule],
   controllers: [MessagesController],
-  providers: [MessagesService, MessagesGateway, WhatsappApiService],
+  providers: [MessagesService, MessagesGateway, WhatsappApiService, BrevoApiService],
   exports: [MessagesService, MessagesGateway, WhatsappApiService],
 })
-export class MessagesModule {}
+export class MessagesModule { }

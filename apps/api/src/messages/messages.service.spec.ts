@@ -5,6 +5,7 @@ import { MessagesGateway } from './messages.gateway';
 import { WhatsappApiService } from './whatsapp-api.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MessageDirection, MessageChannel, MessageStatus } from '@prisma/client';
+import { BrevoApiService } from './brevo-api.service';
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 const mockPrismaContact = { findUnique: jest.fn() };
@@ -43,6 +44,12 @@ describe('MessagesService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MessagesGateway, useValue: mockGateway },
         { provide: WhatsappApiService, useValue: mockWhatsappApi },
+        {
+          provide: BrevoApiService,
+          useValue: {
+            sendEmail: jest.fn().mockResolvedValue(true),
+          },
+        },
       ],
     }).compile();
 
@@ -50,6 +57,7 @@ describe('MessagesService', () => {
     (service as any).prisma = mockPrismaService;
     (service as any).gateway = mockGateway;
     (service as any).whatsappApi = mockWhatsappApi;
+
   });
 
   it('should be defined', () => expect(service).toBeDefined());
@@ -148,9 +156,13 @@ describe('MessagesService', () => {
       mockWhatsappApi.markAsRead.mockResolvedValue(undefined);
 
       const payload = {
-        entry: [{ changes: [{ value: {
-          messages: [{ from: '+573001234567', id: 'wamid_in_001', type: 'text', text: { body: 'Hola!' } }],
-        }}]}],
+        entry: [{
+          changes: [{
+            value: {
+              messages: [{ from: '+573001234567', id: 'wamid_in_001', type: 'text', text: { body: 'Hola!' } }],
+            }
+          }]
+        }],
       };
 
       const result = await service.handleWhatsappWebhook(payload);
@@ -174,9 +186,13 @@ describe('MessagesService', () => {
       mockPrismaMessage.update.mockResolvedValue(updatedMsg);
 
       const payload = {
-        entry: [{ changes: [{ value: {
-          statuses: [{ id: 'wamid_abc123', status: 'delivered' }],
-        }}]}],
+        entry: [{
+          changes: [{
+            value: {
+              statuses: [{ id: 'wamid_abc123', status: 'delivered' }],
+            }
+          }]
+        }],
       };
 
       const result = await service.handleWhatsappWebhook(payload);
@@ -193,7 +209,7 @@ describe('MessagesService', () => {
 
     it('should always return received:true even on errors', async () => {
       mockPrismaMessage.findUnique.mockRejectedValue(new Error('DB error'));
-      const result = await service.handleWhatsappWebhook({ entry: [{ changes: [{ value: { statuses: [{ id: 'x', status: 'read' }] }}]}] });
+      const result = await service.handleWhatsappWebhook({ entry: [{ changes: [{ value: { statuses: [{ id: 'x', status: 'read' }] } }] }] });
       expect(result).toEqual({ received: true });
     });
   });
