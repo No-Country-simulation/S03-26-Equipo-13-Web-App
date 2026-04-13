@@ -1,7 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import { useContactsStore } from "@/store/contactsStore";
+import { useContactsStore } from "@/store/useContactsStore";
 import { useEffect, useState } from "react";
 
 export function ContactsSearch() {

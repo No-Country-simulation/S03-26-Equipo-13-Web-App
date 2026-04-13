@@ -11,7 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAuthStore } from "@/store/authStore";
-import { useContactsStore } from "@/store/contactsStore";
+import { useContactsStore } from "@/store/useContactsStore";
 
 export function EditContactDialog({ contact }: any) {
   const token = useAuthStore((s) => s.token);

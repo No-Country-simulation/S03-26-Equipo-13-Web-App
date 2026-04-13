@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useContactsStore } from "@/store/contactsStore";
+import { useContactsStore } from "@/store/useContactsStore";
 
 type Props = {
   totalPages: number;

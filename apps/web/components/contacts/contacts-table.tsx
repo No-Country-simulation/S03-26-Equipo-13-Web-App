@@ -14,7 +14,7 @@ import {
 
 import { StatusBadge } from "./status-badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useContactsStore } from "@/store/contactsStore";
+import { useContactsStore } from "@/store/useContactsStore";
 import { TableSkeleton } from "../ui/table-skeleton";
 import { ContactsPagination } from "./contacts-pagination";
 import { EditContactDialog } from "./contact-edit";

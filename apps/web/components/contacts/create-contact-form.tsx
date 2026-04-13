@@ -13,7 +13,7 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useContactsStore } from "@/store/contactsStore";
+import { useContactsStore } from "@/store/useContactsStore";
 
 type Props = {
   onSuccess?: () => void;

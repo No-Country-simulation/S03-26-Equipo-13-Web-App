@@ -111,14 +111,14 @@ function StatusBadgeTask({ status }: { status: string }) {
         </Badge>
     );
 } */
-import TaskProviders from "@/store/providers/TaskProvider";
+//import TaskProviders from "@/store/providers/QueryProvider";
 import TasksClient from "@/components/tasks/tasks-client";
 
 export default function TareasPage() {
   return(
-    <TaskProviders>
+    
         <TasksClient />
-    </TaskProviders>
+    
 
   ) 
 }
