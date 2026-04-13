@@ -17,13 +17,50 @@ export class TemplatesService {
   }
 
   async create(dto: CreateTemplateDto) {
-    return this.prisma.template.create({
-      data: {
-        name: dto.name,
-        content: dto.content,
-        category: dto.category,
-      },
-    });
+    // Limpiamos el nombre para que Meta no lo rechace (sin espacios, minúsculas)
+    const metaName = dto.name.toLowerCase().trim().replace(/\s+/g, '_');
+    const metaUrl = `https://graph.facebook.com/v22.0/${process.env.WHATSAPP_BUSINESS_ACCOUNT_ID}/message_templates`;
+    try {
+      const response = await fetch(metaUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: metaName,
+          language: 'es',
+          category: dto.category.toUpperCase(), // Meta exige: MARKETING, UTILITY o AUTHENTICATION
+          components: [
+            {
+              type: 'BODY',
+              text: dto.content,
+            },
+          ],
+        }),
+      });
+
+      const metaResult = await response.json();
+
+      if (metaResult.error) {
+        this.logger.error('Error de Meta:', metaResult.error);
+        throw new Error(
+          `Meta rechazó la creación: ${metaResult.error.message}`,
+        );
+      }
+
+      // 4. Si Meta aceptó la petición, guardamos en nuestra DB
+      return this.prisma.template.create({
+        data: {
+          name: metaName, // Guardamos el nombre "limpio" que enviamos a Meta
+          content: dto.content,
+          category: 'pending', // Inicialmente queda pendiente hasta que el webhook avise
+        },
+      });
+    } catch (error) {
+      this.logger.error('Error al sincronizar con Meta:', error);
+      throw error;
+    }
   }
 
   // POST /templates/webhook — Meta calls this when a template is approved or rejected
@@ -38,7 +75,9 @@ export class TemplatesService {
         return { received: true };
       }
 
-      const template = await this.prisma.template.findFirst({ where: { name: templateName } });
+      const template = await this.prisma.template.findFirst({
+        where: { name: templateName },
+      });
       if (!template) {
         this.logger.warn(`Template "${templateName}" not found in DB`);
         return { received: true };

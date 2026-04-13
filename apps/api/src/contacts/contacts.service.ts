@@ -8,8 +8,8 @@ export class ContactsService {
   // Inject PrismaService — never instantiate PrismaClient directly in a service
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(status?: string, busqueda?: string, page = 1) {
-    const take = 20;
+  async findAll(status?: string, busqueda?: string, page = 1, limit?: number) {
+    const take = limit || 10;
     const skip = (page - 1) * take;
 
     const [data, total] = await this.prisma.$transaction([
