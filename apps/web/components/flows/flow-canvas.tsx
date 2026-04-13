@@ -50,6 +50,7 @@ export default function FlowCanvas() {
       )}
 
       <div className="space-y-3">
+        <p>canvas</p>
         {steps.map((step, index) => (
           <FlowStepNode key={step.id} step={step} index={index} />
         ))}

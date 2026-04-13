@@ -13,12 +13,50 @@ export type FlowStepType =
   | "wait"
   | "update_status"
   | "assign_tag";
-
+/* 
 export interface FlowStep {
     id: string;
   type: FlowStepType;
   config?: Record<string, any>;
-}
+} */
+
+export type FlowStep =
+  | {
+      id: string;
+      type: "send_whatsapp";
+      config: {
+        content: string;
+      };
+    }
+  | {
+      id: string;
+      type: "send_email";
+      config: {
+        content: string;
+        subject: string;
+      };
+    }
+  | {
+      id: string;
+      type: "wait";
+      config: {
+        delayMs: number;
+      };
+    }
+  | {
+      id: string;
+      type: "update_status";
+      config: {
+        status: string;
+      };
+    }
+  | {
+      id: string;
+      type: "assign_tag";
+      config: {
+        tagName: string;
+      };
+    };
 
 export interface FlowExecution {
   id: string;

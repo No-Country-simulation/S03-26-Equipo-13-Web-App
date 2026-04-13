@@ -1,11 +1,12 @@
 "use client";
 
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { MoreVertical } from "lucide-react";
-import FlowSteps from "@/components/flows/flow-steps";
+import FlowStepNode from "@/components/flows/flow-steps";
+import { useRunFlow } from "@/hooks/use-flows";
 
 export default function FlowCard({ flow, onToggle }: any) {
+  const runFlow = useRunFlow()
   return (
     <div className="bg-slate-100 border rounded-2xl p-2">
       {/* HEADER */}
@@ -42,14 +43,14 @@ export default function FlowCard({ flow, onToggle }: any) {
             {flow.executions?.length ?? 0} enviados hoy
           </span>
 
-          <Button variant="ghost" size="icon">
+         {/*  <Button variant="ghost" size="icon">
             <MoreVertical className="w-4 h-4" />
-          </Button>
+          </Button> */}
         </div>
       </div>
 
       {/* STEPS */}
-      <FlowSteps steps={flow.steps} />
+      <FlowStepNode steps={flow.steps} />
     </div>
   );
 }

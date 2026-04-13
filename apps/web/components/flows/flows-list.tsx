@@ -29,7 +29,7 @@ export default function FlowsList() {
       <div className="flex justify-between items-center">
         <h2 className="text-sm font-bold">Flujos automáticos</h2>
 
-        <Button onClick={() => setOpen(true)}>
+        <Button className="h-9 rounded-lg bg-[#6366f1] hover:bg-[#5558e3] gap-2 text-xs px-4" onClick={() => setOpen(true)}>
           Nuevo flujo
         </Button>
       </div>
@@ -61,7 +61,7 @@ export default function FlowsList() {
               ✕
             </button>
 
-            <FlowBuilder />
+            <FlowBuilder onClose={handleClose}/>
           </div>
         </div>
       )}

@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Patch, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FlowsService } from './flows.service';
@@ -12,15 +20,24 @@ export class FlowsController {
   constructor(private readonly flowsService: FlowsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar flujos con historial de ejecuciones recientes' })
+  @ApiOperation({
+    summary: 'Listar flujos con historial de ejecuciones recientes',
+  })
   findAll() {
     return this.flowsService.findAll();
   }
 
   @Post()
-  @ApiOperation({ summary: 'Crear flujo con trigger, lista de pasos y condición de salida' })
+  @ApiOperation({
+    summary: 'Crear flujo con trigger, lista de pasos y condición de salida',
+  })
   create(@Body() dto: CreateFlowDto) {
     return this.flowsService.create(dto);
+  }
+  @Post(':id/trigger')
+  @ApiOperation({ summary: 'Ejecutar flujo manualmente para un contacto' })
+  trigger(@Param('id') id: string, @Body() body: { contactId: string }) {
+    return this.flowsService.triggerFlow(id, body.contactId);
   }
 
   @Patch(':id')
