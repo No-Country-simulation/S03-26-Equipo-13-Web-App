@@ -1,5 +1,9 @@
-export default function ContactosPage() {
-    return (
-        <div>Contactos</div>
-    )
+import { ContactsView } from "@/components/contacts/contacts-view";
+
+export default function ContactPage() {
+  return (
+    <div className="bg-slate-50/30">
+      <ContactsView />
+    </div>
+  );
 }

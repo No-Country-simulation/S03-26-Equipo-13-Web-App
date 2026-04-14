@@ -1,7 +1,9 @@
 
+import { EmailWorkspace } from '@/components/email/email-workspace';
+
 
 export default function EmailPage() {
     return (
-        <div>Email page</div>
-    )
+        <EmailWorkspace />
+    );
 }

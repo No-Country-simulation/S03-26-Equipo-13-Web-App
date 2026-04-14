@@ -7,67 +7,124 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  admin
+  agent
+}
+
+enum ContactStatus {
+  new
+  active
+  inactive
+  archived
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  done
+  cancelled
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+}
+
+enum MessageChannel {
+  whatsapp
+  email
+  sms
+}
+
+enum MessageStatus {
+  sent
+  delivered
+  read
+  failed
+}
+
+enum FlowExecutionStatus {
+  running
+  completed
+  failed
+  cancelled
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  password     String
-  name         String
-  role         String    @default("agent")
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  contacts     Contact[]
-  tasks        Task[]
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      UserRole  @default(agent)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  contacts  Contact[]
+  tasks     Task[]
 }
 
 model Contact {
-  id           String          @id @default(uuid())
+  id           String        @id @default(uuid())
   name         String
-  phone        String          @unique
+  phone        String        @unique
   email        String?
-  status       String          @default("new")
-  assignedTo   User?           @relation(fields: [assignedToId], references: [id])
+  status       ContactStatus @default(new)
   assignedToId String?
-  tags         Tag[]
   notes        String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  tasks        Task[]
-  messages     Message[]
-  flows        FlowExecution[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  assignedTo User?           @relation(fields: [assignedToId], references: [id])
+  flows      FlowExecution[]
+  messages   Message[]
+  tasks      Task[]
+  tags       Tag[]           @relation("ContactToTag")
 }
 
 model Task {
-  id           String    @id @default(uuid())
+  id           String     @id @default(uuid())
   title        String
   description  String?
-  status       String    @default("pending")
+  status       TaskStatus @default(pending)
   dueDate      DateTime?
-  contact      Contact   @relation(fields: [contactId], references: [id])
   contactId    String
-  assignedTo   User?     @relation(fields: [assignedToId], references: [id])
   assignedToId String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  assignedTo User?    @relation(fields: [assignedToId], references: [id])
+  contact    Contact  @relation(fields: [contactId], references: [id])
 }
 
 model Message {
-  id        String   @id @default(uuid())
+  id        String           @id @default(uuid())
+  subject   String?
   content   String
-  direction String
-  channel   String   @default("whatsapp")
-  status    String   @default("sent")
-  contact   Contact  @relation(fields: [contactId], references: [id])
+  direction MessageDirection
+  channel   MessageChannel   @default(whatsapp)
+  status    MessageStatus    @default(sent)
   contactId String
-  createdAt DateTime @default(now())
+  // wamid: WhatsApp Message ID returned by Meta after sending.
+  // Required to match incoming status webhooks (delivered, read, failed).
+  wamid     String?          @unique
+  createdAt DateTime         @default(now())
+
+  contact Contact @relation(fields: [contactId], references: [id])
 }
 
 model Template {
-  id        String   @id @default(uuid())
-  name      String
-  content   String
-  category  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  name       String
+  content    String
+  category   String
+  metaStatus String   @default("pending")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Flow {
@@ -78,23 +135,34 @@ model Flow {
   active     Boolean         @default(true)
   createdAt  DateTime        @default(now())
   updatedAt  DateTime        @updatedAt
+
   executions FlowExecution[]
+
+  @@index([trigger, active])
 }
 
 model FlowExecution {
-  id         String    @id @default(uuid())
-  flow       Flow      @relation(fields: [flowId], references: [id])
+  id         String              @id @default(uuid())
   flowId     String
-  contact    Contact   @relation(fields: [contactId], references: [id])
   contactId  String
-  status     String    @default("running")
-  startedAt  DateTime  @default(now())
+  status     FlowExecutionStatus @default(running)
+  startedAt  DateTime            @default(now())
   finishedAt DateTime?
+
+  contact Contact @relation(fields: [contactId], references: [id])
+  flow    Flow    @relation(fields: [flowId], references: [id])
 }
 
 model Tag {
   id        String    @id @default(uuid())
   name      String    @unique
-  contacts  Contact[]
   createdAt DateTime  @default(now())
+
+  contacts Contact[] @relation("ContactToTag")
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

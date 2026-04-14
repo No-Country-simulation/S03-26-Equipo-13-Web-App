@@ -9,6 +9,13 @@ const roboto = Roboto({
   weight: ["400", "500", "600", "700"],
 });
 
+/* fuente segun guia de prueba crm */
+const dm_sans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"]
+
+})
+
 export const metadata: Metadata = {
   title: "StartupCRM",
   description: "Tu plataforma de gestión",
@@ -24,7 +31,11 @@ export default function RootLayout({
       <body
         className={`${roboto.variable} font-sans antialiased`}
       >
-        {children}
+        <QueryProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );
