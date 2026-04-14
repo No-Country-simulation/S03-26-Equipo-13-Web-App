@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, DM_Sans } from "next/font/google";
+import { Roboto } from "next/font/google";
 import "./globals.css";
 
-import { AuthProvider } from "@/store/providers/AuthProvider";
-import { QueryProvider } from "@/store/providers/QueryProvider";
-
-/* fuentes por defecto de NEXT */
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Configuramos la fuente Roboto
+const roboto = Roboto({
+  variable: "--font-roboto",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 /* fuente segun guia de prueba crm */
@@ -24,8 +17,8 @@ const dm_sans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Startup CRM",
-  description: "CRM para gestión de contactos, mensajes de WhatsApp y campañas de email.",
+  title: "StartupCRM",
+  description: "Tu plataforma de gestión",
 };
 
 export default function RootLayout({
@@ -34,9 +27,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
-        className={`${dm_sans.className} ${geistMono.variable} antialiased`}
+        className={`${roboto.variable} font-sans antialiased`}
       >
         <QueryProvider>
           <AuthProvider>

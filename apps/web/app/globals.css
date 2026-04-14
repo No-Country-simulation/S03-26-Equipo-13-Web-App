@@ -4,19 +4,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@layer utilities {
-  .scrollbar-thin::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
-    border-radius: 10px;
-  }
-}
-
-
-
 
 @theme inline {
   --color-brand: #6e3df5;

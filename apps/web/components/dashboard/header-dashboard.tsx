@@ -2,7 +2,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useNotificationsSocket } from "@/hooks/use-notifications-socket";
 
 // Configuración de los títulos y subtítulos por ruta
 const routeConfig: Record<string, { title: string; subtitle: string }> = {
@@ -42,7 +41,6 @@ const routeConfig: Record<string, { title: string; subtitle: string }> = {
 
 export function Header() {
     const pathname = usePathname();
-    useNotificationsSocket(); // global task reminder toasts
 
     const currentRoute = routeConfig[pathname] || routeConfig["/dashboard"];
 
