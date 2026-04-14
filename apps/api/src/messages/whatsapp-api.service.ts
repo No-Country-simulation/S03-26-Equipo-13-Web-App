@@ -1,5 +1,6 @@
 import { Injectable, Logger, BadGatewayException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SettingsService } from 'src/settings/settings.service';
 
 export interface MetaTextPayload {
   messaging_product: 'whatsapp';
@@ -37,30 +38,39 @@ export class WhatsappApiService {
   private readonly logger = new Logger(WhatsappApiService.name);
   private readonly baseUrl = 'https://graph.facebook.com/v19.0';
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly settings: SettingsService,
+  ) {}
 
-  private get token(): string {
-    return this.config.getOrThrow<string>('WHATSAPP_TOKEN');
+  private async getToken(): Promise<string> {
+    const val = await this.settings.get('WHATSAPP_TOKEN');
+    if (!val) throw new BadGatewayException('WhatsApp Token no configurado. Ve a Configuración para añadirlo.');
+    return val;
   }
 
-  private get phoneId(): string {
-    return this.config.getOrThrow<string>('WHATSAPP_PHONE_ID');
+  private async getPhoneId(): Promise<string> {
+    const val = await this.settings.get('WHATSAPP_PHONE_ID');
+    if (!val) throw new BadGatewayException('WhatsApp Phone ID no configurado. Ve a Configuración para añadirlo.');
+    return val;
   }
 
   // ── Send any payload to Meta ───────────────────────────────────────────────
   async send(payload: MetaPayload): Promise<MetaSendResponse> {
-    const url = `${this.baseUrl}/${this.phoneId}/messages`;
+    const phoneId = await this.getPhoneId();
+    const url = `${this.baseUrl}/${phoneId}/messages`;
 
     let lastError: Error | null = null;
 
     // Retry up to 3 times with exponential backoff (Meta rate limit: 80 msg/s)
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
+        const token = await this.getToken();
         const res = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${this.token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(payload),
         });
@@ -139,12 +149,13 @@ export class WhatsappApiService {
 
   // ── Mark message as read ───────────────────────────────────────────────────
   async markAsRead(wamid: string): Promise<void> {
-    const url = `${this.baseUrl}/${this.phoneId}/messages`;
+    const [phoneId, token] = await Promise.all([this.getPhoneId(), this.getToken()]);
+    const url = `${this.baseUrl}/${phoneId}/messages`;
     await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.token}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         messaging_product: 'whatsapp',

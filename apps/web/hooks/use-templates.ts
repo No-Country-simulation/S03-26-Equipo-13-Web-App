@@ -8,8 +8,10 @@ export interface Template {
   id: string;
   name: string;
   content: string;
-  category: string;
+  category: string;      // marketing | utility | authentication
+  metaStatus: string;    // pending | approved | rejected
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateTemplatePayload {
@@ -34,6 +36,17 @@ export function useCreateTemplate() {
         method: "POST",
         body: JSON.stringify(payload),
       }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["templates"] });
+    },
+  });
+}
+
+export function useDeleteTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchWithAuth(`${API_URL}/templates/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["templates"] });
     },

@@ -1,9 +1,8 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { SettingsService } from 'src/settings/settings.service';
 import { CreateTemplateDto } from './templates.dto';
 
-// Meta sends one of these statuses when approving/rejecting a template
 type MetaApprovalStatus = 'APPROVED' | 'REJECTED' | 'PENDING';
 
 @Injectable()
@@ -12,20 +11,28 @@ export class TemplatesService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
+    private readonly settings: SettingsService,
   ) {}
 
   async findAll() {
-    // Returns all templates; the `category` field encodes the Meta approval status in practice
     return this.prisma.template.findMany({ orderBy: { createdAt: 'desc' } });
   }
 
   async create(dto: CreateTemplateDto) {
-    // Limpiamos el nombre para que Meta no lo rechace (sin espacios, minúsculas)
+    const token = await this.settings.get('WHATSAPP_TOKEN');
+    const businessAccountId = await this.settings.get('WHATSAPP_BUSINESS_ACCOUNT_ID');
+
+    if (!token || !businessAccountId) {
+      throw new BadRequestException(
+        'WhatsApp Token y Business Account ID deben estar configurados en Configuración antes de crear plantillas.',
+      );
+    }
+
+    // Meta requiere nombre en minúsculas sin espacios
     const metaName = dto.name.toLowerCase().trim().replace(/\s+/g, '_');
-    const businessAccountId = this.config.getOrThrow<string>('WHATSAPP_BUSINESS_ACCOUNT_ID');
-    const token = this.config.getOrThrow<string>('WHATSAPP_TOKEN');
     const metaUrl = `https://graph.facebook.com/v19.0/${businessAccountId}/message_templates`;
+
+    let metaResult: any;
     try {
       const response = await fetch(metaUrl, {
         method: 'POST',
@@ -36,40 +43,51 @@ export class TemplatesService {
         body: JSON.stringify({
           name: metaName,
           language: 'es',
-          category: dto.category.toUpperCase(), // Meta exige: MARKETING, UTILITY o AUTHENTICATION
-          components: [
-            {
-              type: 'BODY',
-              text: dto.content,
-            },
-          ],
+          category: dto.category.toUpperCase(),
+          components: [{ type: 'BODY', text: dto.content }],
         }),
       });
-
-      const metaResult = await response.json();
-
-      if (metaResult.error) {
-        this.logger.error('Error de Meta:', metaResult.error);
-        throw new Error(
-          `Meta rechazó la creación: ${metaResult.error.message}`,
-        );
-      }
-
-      // 4. Si Meta aceptó la petición, guardamos en nuestra DB
-      return this.prisma.template.create({
-        data: {
-          name: metaName, // Guardamos el nombre "limpio" que enviamos a Meta
-          content: dto.content,
-          category: 'pending', // Inicialmente queda pendiente hasta que el webhook avise
-        },
-      });
-    } catch (error) {
-      this.logger.error('Error al sincronizar con Meta:', error);
-      throw error;
+      metaResult = await response.json();
+    } catch (err) {
+      this.logger.error('Error de red al contactar Meta:', err);
+      throw new BadRequestException('No se pudo conectar con Meta. Verifica tu conexión.');
     }
+
+    if (metaResult.error) {
+      this.logger.error('Meta rechazó la plantilla:', metaResult.error);
+      throw new BadRequestException(
+        `Meta rechazó la plantilla: ${metaResult.error.message ?? JSON.stringify(metaResult.error)}`,
+      );
+    }
+
+    return this.prisma.template.create({
+      data: {
+        name: metaName,
+        content: dto.content,
+        category: dto.category.toLowerCase(), // guardamos la categoría real
+        metaStatus: 'pending',               // estado de aprobación
+      },
+    });
   }
 
-  // POST /templates/webhook — Meta calls this when a template is approved or rejected
+  async remove(id: string) {
+    const template = await this.prisma.template.findUnique({ where: { id } });
+    if (!template) throw new NotFoundException(`Plantilla ${id} no encontrada`);
+
+    // Intentar eliminar también de Meta (best-effort)
+    const token = await this.settings.get('WHATSAPP_TOKEN');
+    const businessAccountId = await this.settings.get('WHATSAPP_BUSINESS_ACCOUNT_ID');
+    if (token && businessAccountId) {
+      const metaUrl = `https://graph.facebook.com/v19.0/${businessAccountId}/message_templates?name=${template.name}`;
+      await fetch(metaUrl, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch((err) => this.logger.warn(`No se pudo eliminar plantilla de Meta: ${err.message}`));
+    }
+
+    return this.prisma.template.delete({ where: { id } });
+  }
+
   async handleMetaApproval(payload: any) {
     try {
       const event = payload?.entry?.[0]?.changes?.[0]?.value;
@@ -89,11 +107,9 @@ export class TemplatesService {
         return { received: true };
       }
 
-      // Store the Meta approval status inside the category field
-      // (extend the schema with a dedicated `metaStatus` column for a cleaner solution)
       await this.prisma.template.update({
         where: { id: template.id },
-        data: { category: status.toLowerCase() },
+        data: { metaStatus: status.toLowerCase() },
       });
 
       this.logger.log(`Template "${templateName}" → ${status}`);

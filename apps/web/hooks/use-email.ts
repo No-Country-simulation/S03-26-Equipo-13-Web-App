@@ -37,7 +37,9 @@ export function useEmailHistory(contactId?: string) {
   });
 }
 
-export function useSendEmail() {
+/** Sends an email via POST /email/send (accepts raw HTML, direct recipient address).
+ *  Use useSendEmail from use-messages.ts for contact-based sending. */
+export function useSendEmailDirect() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: SendEmailPayload) =>

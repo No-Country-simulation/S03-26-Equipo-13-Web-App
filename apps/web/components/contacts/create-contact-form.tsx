@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useContactsStore } from "@/store/contactsStore";
+import { API_URL } from "@/lib/config";
 
 type Props = {
   onSuccess?: () => void;
@@ -46,7 +47,7 @@ export function CreateContactForm({ onSuccess }: Props) {
     setError(null);
 
     try {
-      const res = await fetch("http://localhost:3001/contacts", {
+      const res = await fetch(`${API_URL}/contacts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

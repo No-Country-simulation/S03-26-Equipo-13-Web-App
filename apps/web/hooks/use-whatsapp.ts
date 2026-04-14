@@ -20,6 +20,7 @@ export interface Template {
   name: string;
   content: string;
   category: string;
+  metaStatus: string;
   createdAt: string;
 }
 

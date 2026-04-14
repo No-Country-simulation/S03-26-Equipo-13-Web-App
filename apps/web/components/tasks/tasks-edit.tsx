@@ -49,8 +49,8 @@ export default function TaskEditDialog({
       id: task.id,
       data: {
         title: data.title,
-        dueDate: new Date(data.dueDate).toISOString(),
-        description: data.description
+        ...(data.dueDate ? { dueDate: new Date(data.dueDate + "T12:00:00").toISOString() } : {}),
+        description: data.description,
       },
     });
 

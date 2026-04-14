@@ -89,7 +89,8 @@ export class MessagesService {
     const message = await this.prisma.message.create({
       data: {
         contactId: dto.contactId,
-        content: `${dto.subject}\n\n${dto.content}`,
+        subject: dto.subject,
+        content: dto.content,
         direction: MessageDirection.outbound,
         channel: MessageChannel.email,
         status: MessageStatus.sent,
@@ -128,7 +129,9 @@ export class MessagesService {
       // ── Inbound message ───────────────────────────────────────────────────
       const inboundMessage = value?.messages?.[0];
       if (inboundMessage) {
-        await this.handleInboundMessage(inboundMessage);
+        // contacts[] is at value.contacts, not inside the message object
+        const profileName: string | undefined = value?.contacts?.[0]?.profile?.name;
+        await this.handleInboundMessage(inboundMessage, profileName);
       }
 
       return { received: true };
@@ -140,7 +143,7 @@ export class MessagesService {
   }
 
   // ── Private: handle inbound message ───────────────────────────────────────
-  private async handleInboundMessage(inbound: any) {
+  private async handleInboundMessage(inbound: any, profileName?: string) {
     const phone = inbound.from as string;
     const wamid = inbound.id as string;
     const text =
@@ -154,10 +157,17 @@ export class MessagesService {
               ? '[documento]'
               : `[${inbound.type ?? 'media'}]`;
 
-    const contact = await this.prisma.contact.findUnique({ where: { phone } });
+    // Auto-create contact if unknown phone — never lose an inbound message
+    let contact = await this.prisma.contact.findUnique({ where: { phone } });
     if (!contact) {
-      this.logger.warn(`Webhook: no contact found for phone ${phone}`);
-      return;
+      this.logger.log(`Webhook: unknown phone ${phone} — auto-creating contact`);
+      contact = await this.prisma.contact.create({
+        data: {
+          phone,
+          name: profileName ?? phone, // use WhatsApp display name if available
+          status: 'new',
+        },
+      });
     }
 
     const message = await this.prisma.message.create({

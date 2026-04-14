@@ -68,3 +68,14 @@ export function useCreateFlow() {
     },
   });
 }
+
+export function useDeleteFlow() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchWithAuth(`${API_URL}/flows/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["flows"] });
+    },
+  });
+}

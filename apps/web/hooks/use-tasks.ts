@@ -12,15 +12,15 @@ import { TaskStatus, Task } from "@/store/useTasksStore";
 // ==============================
 // GET TASKS
 // ==============================
-export function useTasks(filters?: { status?: TaskStatus; contact?: string }) {
+export function useTasks(filters?: { status?: TaskStatus; contactId?: string }) {
   return useQuery({
-    queryKey: ["tasks", filters?.status, filters?.contact],
+    queryKey: ["tasks", filters?.status, filters?.contactId],
 
     queryFn: async (): Promise<Task[]> => {
       const params = new URLSearchParams();
 
       if (filters?.status) params.append("status", filters.status);
-      if (filters?.contact) params.append("contact", filters.contact);
+      if (filters?.contactId) params.append("contactId", filters.contactId);
 
       return fetchWithAuth(`${API_URL}/tasks?${params.toString()}`);
     },
@@ -43,7 +43,7 @@ export function useCreateTask() {
         title: data.title,
         contactId: data.contactId,
                ...(data.description ? { description: data.description } : {}),
-               ...(data.dueDate ? { dueDate: new Date(data.dueDate).toISOString() } : {}),
+               ...(data.dueDate ? { dueDate: new Date(data.dueDate + "T12:00:00").toISOString() } : {}),
       };
 
 

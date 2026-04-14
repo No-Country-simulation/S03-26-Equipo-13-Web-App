@@ -1,11 +1,6 @@
-import {
-  Injectable,
-  Logger,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { BrevoClient } from '@getbrevo/brevo';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { SettingsService } from '../settings/settings.service.js';
 import { SendEmailDto } from './dto/send-email.dto.js';
 
 interface SendResult {
@@ -32,57 +27,71 @@ interface EmailHistoryItem {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly client: BrevoClient;
-  private readonly senderEmail: string;
-  private readonly senderName: string;
+  private readonly brevoUrl = 'https://api.brevo.com/v3/smtp/email';
 
   constructor(
-    private readonly config: ConfigService,
     private readonly prisma: PrismaService,
-  ) {
-    this.client = new BrevoClient({
-      apiKey: this.config.getOrThrow<string>('BREVO_API_KEY'),
-    });
-    this.senderEmail = this.config.get<string>(
-      'BREVO_SENDER_EMAIL',
-      'no-reply@vigu.blog',
-    );
-    this.senderName = this.config.get<string>(
-      'BREVO_SENDER_NAME',
-      'Startup CRM',
-    );
-  }
+    private readonly settings: SettingsService,
+  ) {}
 
   async send(dto: SendEmailDto): Promise<SendResult> {
-    try {
-      const response = await this.client.transactionalEmails.sendTransacEmail({
-        subject: dto.subject,
-        htmlContent: dto.htmlContent,
-        sender: { email: this.senderEmail, name: this.senderName },
-        to: [{ email: dto.to, name: dto.toName ?? dto.to }],
-        ...(dto.replyTo ? { replyTo: { email: dto.replyTo } } : {}),
-      });
-
-      this.logger.log(`Email enviado a ${dto.to}`);
-
-      if (dto.contactId) {
-        await this.prisma.message.create({
-          data: {
-            subject: dto.subject,
-            content: dto.htmlContent,
-            direction: 'outbound',
-            channel: 'email',
-            status: 'sent',
-            contactId: dto.contactId,
-          },
-        });
-      }
-
-      return { ok: true, data: response };
-    } catch (err) {
-      this.logger.error('Error enviando email via Brevo', err);
-      throw new InternalServerErrorException('No se pudo enviar el email');
+    // Resolve credentials from Settings DB first, then env fallback
+    const apiKey = await this.settings.get('BREVO_API_KEY');
+    if (!apiKey) {
+      throw new BadRequestException(
+        'Brevo API Key no configurada. Ve a Configuración para añadirla.',
+      );
     }
+
+    const senderEmail =
+      (await this.settings.get('BREVO_SENDER_EMAIL')) ?? 'no-reply@vigu.blog';
+    const senderName =
+      (await this.settings.get('BREVO_SENDER_NAME')) ?? 'Startup CRM';
+
+    const body: Record<string, unknown> = {
+      sender: { email: senderEmail, name: senderName },
+      to: [{ email: dto.to, name: dto.toName ?? dto.to }],
+      subject: dto.subject,
+      htmlContent: dto.htmlContent,
+      ...(dto.replyTo ? { replyTo: { email: dto.replyTo } } : {}),
+    };
+
+    const res = await fetch(this.brevoUrl, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      this.logger.error(`Error enviando email via Brevo: ${JSON.stringify(err)}`);
+      throw new BadRequestException(
+        `Fallo en proveedor de correo: ${(err as any)?.message ?? res.statusText}`,
+      );
+    }
+
+    const data = await res.json().catch(() => ({}));
+    this.logger.log(`Email enviado a ${dto.to}`);
+
+    // Persist in messages table for history
+    if (dto.contactId) {
+      await this.prisma.message.create({
+        data: {
+          subject: dto.subject,
+          content: dto.htmlContent,
+          direction: 'outbound',
+          channel: 'email',
+          status: 'sent',
+          contactId: dto.contactId,
+        },
+      });
+    }
+
+    return { ok: true, data };
   }
 
   async getHistory(contactId?: string): Promise<EmailHistoryItem[]> {

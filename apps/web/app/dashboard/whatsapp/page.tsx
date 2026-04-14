@@ -61,9 +61,9 @@ function ChatPanel({ contactId, contactName }: { contactId: string; contactName:
     sendWhatsapp({ contactId, templateName });
   };
 
-  // Approved templates only (category !== pending/rejected)
+  // Only show templates approved by Meta
   const approvedTemplates = templates.filter(
-    (t) => t.category !== "pending" && t.category !== "rejected"
+    (t) => t.metaStatus === "approved"
   );
 
   return (

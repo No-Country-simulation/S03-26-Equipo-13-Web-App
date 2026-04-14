@@ -11,7 +11,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserRole } from '@prisma/client';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,7 +21,7 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 
 @ApiTags('users')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'))       // All user endpoints require authentication
+@UseGuards(JwtAuthGuard)       // All user endpoints require authentication
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}

@@ -1,12 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { ContactStatus } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { FlowsService } from 'src/flows/flows.service';
+import { FlowTrigger } from 'src/flows/flows.dto';
+import { BrevoApiService } from 'src/messages/brevo-api.service';
 import { CreateContactDto } from './create-contact.dto';
 
 @Injectable()
 export class ContactsService {
-  // Inject PrismaService — never instantiate PrismaClient directly in a service
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(ContactsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly flowsService: FlowsService,
+    private readonly brevoApi: BrevoApiService,
+  ) {}
 
   async findAll(status?: string, busqueda?: string, page = 1, limit?: number) {
     const take = limit || 10;
@@ -61,19 +69,50 @@ export class ContactsService {
   }
 
   async create(data: CreateContactDto) {
-    return this.prisma.contact.create({
+    const contact = await this.prisma.contact.create({
       data,
       include: { tags: true },
     });
+
+    // Sync to Brevo if contact has email (fire-and-forget)
+    if (contact.email) {
+      this.brevoApi
+        .syncContact(contact.email, contact.name, contact.phone)
+        .catch((err) => this.logger.error(`Brevo sync error on create: ${err.message}`));
+    }
+
+    // Disparar flujos con trigger contact_created (sin bloquear la respuesta)
+    this.flowsService
+      .triggerByEvent(FlowTrigger.contact_created, contact.id)
+      .catch((err) => this.logger.error(`Error triggering contact_created flows: ${err.message}`));
+
+    return contact;
   }
 
   async update(id: string, data: Partial<CreateContactDto>) {
-    await this.findOne(id); // throws 404 if not found
-    return this.prisma.contact.update({
+    const before = await this.findOne(id);
+    const updated = await this.prisma.contact.update({
       where: { id },
       data,
       include: { tags: true },
     });
+
+    // Sync to Brevo if email is present (updated or pre-existing)
+    const syncEmail = updated.email ?? before.email;
+    if (syncEmail) {
+      this.brevoApi
+        .syncContact(syncEmail, updated.name, updated.phone)
+        .catch((err) => this.logger.error(`Brevo sync error on update: ${err.message}`));
+    }
+
+    // Disparar flujos status_changed si el estado cambió
+    if (data.status && data.status !== before.status) {
+      this.flowsService
+        .triggerByEvent(FlowTrigger.status_changed, id)
+        .catch((err) => this.logger.error(`Error triggering status_changed flows: ${err.message}`));
+    }
+
+    return updated;
   }
 
   async updateTags(id: string, tagNames: string[]) {
@@ -85,15 +124,23 @@ export class ContactsService {
       ),
     );
 
-    return this.prisma.contact.update({
+    const updated = await this.prisma.contact.update({
       where: { id },
       data: { tags: { set: tags.map((t) => ({ id: t.id })) } },
       include: { tags: true },
     });
+
+    // Disparar flujos tag_added si se agregaron etiquetas
+    if (tagNames.length > 0) {
+      this.flowsService
+        .triggerByEvent(FlowTrigger.tag_added, id)
+        .catch((err) => this.logger.error(`Error triggering tag_added flows: ${err.message}`));
+    }
+
+    return updated;
   }
 
   async remove(id: string) {
-    // Role enforcement (admin only) is handled by @Roles + RolesGuard in the controller
     await this.findOne(id);
     return this.prisma.contact.delete({ where: { id } });
   }

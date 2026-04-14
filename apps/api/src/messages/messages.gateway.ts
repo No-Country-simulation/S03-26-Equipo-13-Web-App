@@ -49,4 +49,11 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
   emitMessageStatusUpdate(contactId: string, update: { id: string; wamid: string; status: string }) {
     this.server.to(`contact:${contactId}`).emit('message_status', update);
   }
+
+  // Emits a task reminder so the frontend can show a toast notification
+  emitTaskReminder(contactId: string, reminder: { taskId: string; title: string; assignedToId?: string }) {
+    this.server.to(`contact:${contactId}`).emit('task_reminder', reminder);
+    // Also broadcast globally so any connected agent sees it regardless of active contact
+    this.server.emit('task_reminder', reminder);
+  }
 }

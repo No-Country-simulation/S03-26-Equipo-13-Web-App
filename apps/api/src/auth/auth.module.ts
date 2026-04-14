@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SettingsModule } from 'src/settings/settings.module';
 import Redis from 'ioredis';
 
 @Module({
@@ -26,6 +27,7 @@ import Redis from 'ioredis';
   imports: [
     PrismaModule,
     ConfigModule,
+    SettingsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

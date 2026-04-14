@@ -1,43 +1,44 @@
 "use client";
 
 import { useState } from 'react';
-import { Plus, Check, Clock3, Edit3, XOctagon } from 'lucide-react';
+import { Plus, Check, Clock3, Edit3, XOctagon, Trash2, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useTemplates, useCreateTemplate } from "@/hooks/use-templates";
+import { useTemplates, useCreateTemplate, useDeleteTemplate } from "@/hooks/use-templates";
+import { toast } from "sonner";
 
-// ── Status helpers ─────────────────────────────────────────────────────────────
-type TemplateStatus = "approved" | "pending" | "rejected" | string;
+// ── Status helpers ──────────────────────────────────────────────────────────────
+type TemplateStatus = "approved" | "pending" | "rejected";
 
-function resolveStatus(category: string): TemplateStatus {
-  const lower = category?.toLowerCase();
-  if (lower === "approved") return "approved";
-  if (lower === "rejected") return "rejected";
-  return "pending"; // 'pending' or unknown category
+function resolveStatus(metaStatus: string): TemplateStatus {
+  const s = metaStatus?.toLowerCase();
+  if (s === "approved") return "approved";
+  if (s === "rejected") return "rejected";
+  return "pending";
 }
 
-const STATUS_LABEL: Record<string, string> = {
+const STATUS_LABEL: Record<TemplateStatus, string> = {
   approved: "Aprobada",
   pending: "En revisión",
   rejected: "Rechazada",
 };
 
-const STATUS_BAR: Record<string, string> = {
+const STATUS_BAR: Record<TemplateStatus, string> = {
   approved: "bg-green-500",
   pending: "bg-orange-400",
   rejected: "bg-red-500",
 };
 
-const STATUS_BADGE: Record<string, string> = {
-  approved: "bg-green-100/60 text-green-800",
-  pending: "bg-orange-100/60 text-orange-800",
-  rejected: "bg-red-100/60 text-red-800",
+const CATEGORY_LABEL: Record<string, string> = {
+  marketing: "MARKETING",
+  utility: "UTILITY",
+  authentication: "AUTHENTICATION",
 };
 
-// ── Filter tabs ─────────────────────────────────────────────────────────────────
+// ── Filter tabs ──────────────────────────────────────────────────────────────────
 const TABS = ["Todas", "Aprobadas", "En revisión", "Rechazadas"] as const;
 type Tab = typeof TABS[number];
 
@@ -48,13 +49,13 @@ const TAB_STATUS: Record<Tab, TemplateStatus | null> = {
   "Rechazadas": "rejected",
 };
 
-// ── Create Template Modal ───────────────────────────────────────────────────────
+// ── Create Template Modal ────────────────────────────────────────────────────────
 function NewTemplateModal() {
   const { mutate: createTemplate, isPending } = useCreateTemplate();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState("MARKETING");
+  const [category, setCategory] = useState("marketing");
 
   const handleCreate = () => {
     if (!name.trim() || !content.trim()) return;
@@ -62,12 +63,11 @@ function NewTemplateModal() {
       { name: name.trim(), content: content.trim(), category },
       {
         onSuccess: () => {
-          setName("");
-          setContent("");
-          setCategory("MARKETING");
+          toast.success("Plantilla enviada a Meta para revisión");
+          setName(""); setContent(""); setCategory("marketing");
           setOpen(false);
         },
-        onError: (e) => alert("Error al crear: " + e.message),
+        onError: (e) => toast.error("Error al crear: " + e.message),
       }
     );
   };
@@ -85,7 +85,9 @@ function NewTemplateModal() {
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div>
-            <label className="text-xs font-semibold text-slate-500 mb-1 block">Nombre (solo letras, números y _)</label>
+            <label className="text-xs font-semibold text-slate-500 mb-1 block">
+              Nombre <span className="font-normal text-slate-400">(solo letras, números y _)</span>
+            </label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -100,9 +102,9 @@ function NewTemplateModal() {
               onChange={(e) => setCategory(e.target.value)}
               className="w-full h-10 rounded-md border border-slate-200 px-3 text-sm bg-white text-slate-700"
             >
-              <option value="MARKETING">MARKETING</option>
-              <option value="UTILITY">UTILITY</option>
-              <option value="AUTHENTICATION">AUTHENTICATION</option>
+              <option value="marketing">MARKETING</option>
+              <option value="utility">UTILITY</option>
+              <option value="authentication">AUTHENTICATION</option>
             </select>
           </div>
           <div>
@@ -110,21 +112,115 @@ function NewTemplateModal() {
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Hola {{1}}, te escribimos para..."
+              placeholder={`Hola {{1}}, te escribimos para informarte que...`}
               className="min-h-[120px] text-sm"
             />
-            <p className="text-[10px] text-slate-400 mt-1">Usá {`{{1}}`}, {`{{2}}`}, etc. para variables</p>
+            <p className="text-[10px] text-slate-400 mt-1">
+              Usá {`{{1}}`}, {`{{2}}`}, etc. para variables dinámicas
+            </p>
           </div>
           <Button
             onClick={handleCreate}
             disabled={isPending || !name.trim() || !content.trim()}
             className="w-full bg-[#6366f1] hover:bg-[#5558e3] text-white"
           >
-            {isPending ? "Enviando a Meta..." : "Crear y enviar a revisión"}
+            {isPending ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando a Meta...</>
+            ) : (
+              "Crear y enviar a revisión"
+            )}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Template card ─────────────────────────────────────────────────────────────
+function TemplateCard({ tpl }: { tpl: ReturnType<typeof useTemplates>["data"] extends (infer T)[] | undefined ? T : never }) {
+  const { mutate: deleteTemplate, isPending: deleting } = useDeleteTemplate();
+  const status = resolveStatus(tpl.metaStatus);
+  const barColor = STATUS_BAR[status];
+
+  const handleDelete = () => {
+    deleteTemplate(tpl.id, {
+      onSuccess: () => toast.success("Plantilla eliminada"),
+      onError: (e) => toast.error("Error al eliminar: " + e.message),
+    });
+  };
+
+  return (
+    <div className="relative flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div className={`w-1.5 shrink-0 ${barColor}`} />
+
+      <div className="flex-1 p-5">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3.5">
+          <h3 className="font-mono font-bold text-slate-800 text-[13px] tracking-tight bg-slate-100 px-2 py-0.5 rounded">
+            {tpl.name}
+          </h3>
+          <div className="flex items-center gap-2.5">
+            <StatusBadgeTemplate status={STATUS_LABEL[status]} />
+
+            {/* Delete button */}
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              title="Eliminar plantilla"
+              className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+            >
+              {deleting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="border border-slate-100 rounded-lg p-4 mb-3.5 bg-slate-50/50">
+          <p className="text-[12px] text-slate-500 leading-relaxed font-normal">
+            {tpl.content}
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center gap-1.5">
+          <Badge className="bg-slate-100 text-slate-400 border-none font-bold text-[8px] px-2 py-0.5 tracking-wider rounded-md hover:bg-slate-100">
+            WHATSAPP
+          </Badge>
+          <Badge className="bg-slate-100 text-slate-400 border-none font-bold text-[8px] px-2 py-0.5 tracking-wider rounded-md hover:bg-slate-100">
+            ES
+          </Badge>
+          {tpl.category && (
+            <Badge className="bg-indigo-50 text-indigo-400 border-none font-bold text-[8px] px-2 py-0.5 tracking-wider rounded-md hover:bg-indigo-50">
+              {CATEGORY_LABEL[tpl.category] ?? tpl.category.toUpperCase()}
+            </Badge>
+          )}
+        </div>
+
+        {/* Rejection notice */}
+        {status === "rejected" && (
+          <div className="mt-4 bg-red-50/50 border border-red-100 p-3 rounded-lg flex items-start gap-2.5">
+            <XOctagon className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+            <p className="text-[11px] text-red-500 font-medium leading-normal">
+              Meta rechazó esta plantilla. Eliminala y creá una nueva con el contenido corregido.
+            </p>
+          </div>
+        )}
+
+        {/* Pending notice */}
+        {status === "pending" && (
+          <div className="mt-4 bg-orange-50/50 border border-orange-100 p-3 rounded-lg flex items-start gap-2.5">
+            <Clock3 className="w-4 h-4 text-orange-400 mt-0.5 shrink-0" />
+            <p className="text-[11px] text-orange-600 font-medium leading-normal">
+              En revisión por Meta. El proceso puede tardar minutos o hasta 24 horas.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -136,7 +232,7 @@ export default function PlantillasPage() {
   const filtered = templates.filter((t) => {
     const statusFilter = TAB_STATUS[activeTab];
     if (!statusFilter) return true;
-    return resolveStatus(t.category) === statusFilter;
+    return resolveStatus(t.metaStatus) === statusFilter;
   });
 
   return (
@@ -180,71 +276,9 @@ export default function PlantillasPage() {
 
       {/* Template cards */}
       <div className="space-y-4 max-w-6xl">
-        {filtered.map((tpl) => {
-          const status = resolveStatus(tpl.category);
-          const label = STATUS_LABEL[status] ?? "En revisión";
-          const barColor = STATUS_BAR[status] ?? "bg-orange-400";
-
-          return (
-            <div
-              key={tpl.id}
-              className="relative flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className={`w-1.5 shrink-0 ${barColor}`} />
-
-              <div className="flex-1 p-5">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-3.5">
-                  <h3 className="font-mono font-bold text-slate-800 text-[13px] tracking-tight bg-slate-100 px-2 py-0.5 rounded">
-                    {tpl.name}
-                  </h3>
-                  <div className="flex items-center gap-2.5">
-                    <StatusBadgeTemplate status={label} />
-                    <Button
-                      variant="outline"
-                      disabled={status !== "approved"}
-                      className={`h-7 rounded-lg text-[10px] font-bold px-3 gap-1.5 border-slate-200 ${
-                        status === "approved"
-                          ? 'text-green-700 hover:bg-green-50 hover:border-green-100'
-                          : 'text-slate-400'
-                      }`}
-                    >
-                      <ActionButtonIcon status={status} />
-                      {status === "rejected" ? "Editar y reenviar" : status === "pending" ? "Pendiente" : "Usar"}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Body */}
-                <div className="border border-slate-100 rounded-lg p-4 mb-3.5 bg-slate-50/50">
-                  <p className="text-[12px] text-slate-500 leading-relaxed font-normal">
-                    {tpl.content}
-                  </p>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center gap-1.5">
-                  <Badge className="bg-slate-100 text-slate-400 border-none font-bold text-[8px] px-2 py-0.5 tracking-wider rounded-md hover:bg-slate-100">
-                    WHATSAPP
-                  </Badge>
-                  <Badge className="bg-slate-100 text-slate-400 border-none font-bold text-[8px] px-2 py-0.5 tracking-wider rounded-md hover:bg-slate-100">
-                    ES
-                  </Badge>
-                </div>
-
-                {/* Rejection reason */}
-                {status === "rejected" && (
-                  <div className="mt-4 bg-red-50/50 border border-red-100 p-3 rounded-lg flex items-start gap-2.5">
-                    <XOctagon className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-                    <p className="text-[11px] text-red-500 font-medium leading-normal">
-                      Meta rechazó esta plantilla. Editá el contenido y reenvíala.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {filtered.map((tpl) => (
+          <TemplateCard key={tpl.id} tpl={tpl} />
+        ))}
       </div>
     </div>
   );
@@ -261,10 +295,4 @@ function StatusBadgeTemplate({ status }: { status: string }) {
       {status}
     </span>
   );
-}
-
-function ActionButtonIcon({ status }: { status: string }) {
-  if (status === "approved") return <Check className="w-3.5 h-3.5" />;
-  if (status === "pending") return <Clock3 className="w-3.5 h-3.5" />;
-  return <Edit3 className="w-3.5 h-3.5" />;
 }

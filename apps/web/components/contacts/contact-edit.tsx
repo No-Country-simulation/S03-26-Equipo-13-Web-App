@@ -1,5 +1,6 @@
 "use client";
 
+import { API_URL } from "@/lib/config";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,7 @@ export function EditContactDialog({ contact }: any) {
 
   const handleSubmit = async () => {
     try {
-      await fetch(`http://localhost:3001/contacts/${contact.id}`, {
+      await fetch(`${API_URL}/contacts/${contact.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

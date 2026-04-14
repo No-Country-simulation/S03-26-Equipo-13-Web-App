@@ -15,21 +15,23 @@ import {
   ApiResponse,
   ApiBody,
 } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ConfigService } from '@nestjs/config';
 import type { Response } from 'express';
 import { MessagesService } from './messages.service';
 import { SendWhatsappDto, SendEmailByContactDto } from './messages.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { SettingsService } from 'src/settings/settings.service';
 
 @ApiTags('messages')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard)
 @Controller('messages')
 export class MessagesController {
   constructor(
     private readonly messagesService: MessagesService,
     private readonly config: ConfigService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   @Get()
@@ -87,13 +89,16 @@ export class MessagesController {
   @ApiQuery({ name: 'hub.challenge', required: true, example: '1234567890' })
   @ApiResponse({ status: 200, description: 'Challenge devuelto — webhook verificado' })
   @ApiResponse({ status: 400, description: 'Token incorrecto — verificación fallida' })
-  verifyWebhook(
+  async verifyWebhook(
     @Query('hub.mode') mode: string,
     @Query('hub.verify_token') token: string,
     @Query('hub.challenge') challenge: string,
     @Res() res: Response,
   ) {
-    const verifyToken = this.config.getOrThrow<string>('WEBHOOK_VERIFY_TOKEN');
+    const verifyToken =
+      (await this.settingsService.get('WEBHOOK_VERIFY_TOKEN')) ??
+      this.config.get<string>('WEBHOOK_VERIFY_TOKEN') ??
+      '';
     const result = this.messagesService.verifyWebhook(mode, token, challenge, verifyToken);
     res.status(200).send(result);
   }

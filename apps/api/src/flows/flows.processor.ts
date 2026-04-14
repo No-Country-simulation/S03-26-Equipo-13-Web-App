@@ -41,7 +41,7 @@ export class FlowsProcessor {
     try {
       await this.executeStep(step, contactId);
     } catch (err) {
-      this.logger.error(`Flow execution ${executionId} step ${stepIndex} failed`, err);
+      this.logger.error(`Flow execution ${executionId} step ${stepIndex} failed: ${err.message}`);
       await this.prisma.flowExecution.update({
         where: { id: executionId },
         data: { status: FlowExecutionStatus.failed, finishedAt: new Date() },
@@ -70,34 +70,49 @@ export class FlowsProcessor {
     contactId: string,
   ) {
     switch (step.type) {
-      case FlowStepType.send_whatsapp:
+      case FlowStepType.send_whatsapp: {
+        // FIX: use templateName from config (not content)
+        const templateName = step.config?.templateName;
+        const content = step.config?.content;
+        if (!templateName && !content) {
+          this.logger.warn(`send_whatsapp step has no templateName or content — skipping`);
+          return;
+        }
         await this.messagesService.sendWhatsapp({
           contactId,
-          content: step.config?.content ?? '',
+          ...(templateName ? { templateName } : { content }),
         });
         break;
+      }
 
-      case FlowStepType.send_email:
-        await this.messagesService.sendEmail({
-          contactId,
-          subject: step.config?.subject ?? '',
-          content: step.config?.content ?? '',
-        });
+      case FlowStepType.send_email: {
+        const subject = step.config?.subject ?? '(Sin asunto)';
+        const content = step.config?.content ?? '';
+        if (!content) {
+          this.logger.warn(`send_email step has no content configured — skipping`);
+          return;
+        }
+        await this.messagesService.sendEmail({ contactId, subject, content });
         break;
+      }
 
       case FlowStepType.update_status:
-        await this.prisma.contact.update({
-          where: { id: contactId },
-          data: { status: step.config?.status as ContactStatus },
-        });
+        if (step.config?.status) {
+          await this.prisma.contact.update({
+            where: { id: contactId },
+            data: { status: step.config.status as ContactStatus },
+          });
+        }
         break;
 
-      case FlowStepType.assign_tag:
-        if (step.config?.tagName) {
+      case FlowStepType.assign_tag: {
+        // FIX: UI stores the tag name as `tag` (not `tagName`)
+        const tagName = step.config?.tagName ?? step.config?.tag;
+        if (tagName) {
           const tag = await this.prisma.tag.upsert({
-            where: { name: step.config.tagName },
+            where: { name: tagName },
             update: {},
-            create: { name: step.config.tagName },
+            create: { name: tagName },
           });
           await this.prisma.contact.update({
             where: { id: contactId },
@@ -105,8 +120,10 @@ export class FlowsProcessor {
           });
         }
         break;
+      }
 
       case FlowStepType.wait:
+        // delay is handled by Bull queue via delayMs in config
         break;
 
       default:

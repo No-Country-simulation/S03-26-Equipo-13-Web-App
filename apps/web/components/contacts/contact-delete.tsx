@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { API_URL } from "@/lib/config";
 
 interface DeleteContactProps {
   contactId: string;
@@ -30,12 +31,11 @@ export function DeleteContactDialog({ contactId, contactName }: DeleteContactPro
   const triggerRefresh = useContactsStore((state) => state.triggerRefresh);
 
   // Verificación de rol -- consultar reglas del back
-  if (user?.role !== "admin") return null;
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const res = await fetch(`http://localhost:3001/contacts/${contactId}`, {
+      const res = await fetch(`${API_URL}/contacts/${contactId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

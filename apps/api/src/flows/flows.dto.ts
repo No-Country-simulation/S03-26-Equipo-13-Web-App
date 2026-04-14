@@ -1,4 +1,12 @@
-import { IsString, IsArray, IsBoolean, IsOptional, ValidateNested, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsBoolean,
+  IsOptional,
+  ValidateNested,
+  IsEnum,
+  ArrayMinSize,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -22,7 +30,16 @@ export class FlowStepDto {
   @IsEnum(FlowStepType)
   type: FlowStepType;
 
-  @ApiPropertyOptional({ description: 'Payload del paso (mensaje, delay en ms, nuevo estado, etc.)' })
+  @ApiPropertyOptional({
+    description: [
+      'Configuración del paso según su tipo:',
+      '  send_whatsapp → { templateName: string }',
+      '  send_email    → { subject: string, content: string }',
+      '  wait          → { delayMs: number }',
+      '  update_status → { status: "new"|"active"|"inactive"|"archived" }',
+      '  assign_tag    → { tag: string }',
+    ].join('\n'),
+  })
   @IsOptional()
   config?: Record<string, any>;
 }
@@ -36,8 +53,9 @@ export class CreateFlowDto {
   @IsEnum(FlowTrigger)
   trigger: FlowTrigger;
 
-  @ApiProperty({ type: [FlowStepDto] })
+  @ApiProperty({ type: [FlowStepDto], minItems: 1 })
   @IsArray()
+  @ArrayMinSize(1, { message: 'El flujo debe tener al menos un paso' })
   @ValidateNested({ each: true })
   @Type(() => FlowStepDto)
   steps: FlowStepDto[];
@@ -57,6 +75,7 @@ export class UpdateFlowDto {
   @ApiPropertyOptional({ type: [FlowStepDto] })
   @IsOptional()
   @IsArray()
+  @ArrayMinSize(1, { message: 'El flujo debe tener al menos un paso' })
   @ValidateNested({ each: true })
   @Type(() => FlowStepDto)
   steps?: FlowStepDto[];

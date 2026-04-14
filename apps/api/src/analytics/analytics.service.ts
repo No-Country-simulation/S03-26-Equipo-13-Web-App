@@ -112,6 +112,33 @@ export class AnalyticsService {
       { requestedAt: new Date().toISOString() },
       { removeOnComplete: true },
     );
-    return { jobId: job.id, message: 'Export iniciado. Recibirás el archivo al completarse.' };
+    return { jobId: job.id, message: 'Export iniciado.' };
+  }
+
+  /** Generates and returns the contacts CSV string synchronously. */
+  async buildContactsCsv(): Promise<string> {
+    const contacts = await this.prisma.contact.findMany({
+      include: { tags: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+
+    const lines = [
+      'id,name,email,phone,status,tags,createdAt',
+      ...contacts.map((c) =>
+        [
+          c.id,
+          escape(c.name),
+          c.email ?? '',
+          c.phone,
+          c.status,
+          escape(c.tags.map((t) => t.name).join(';')),
+          c.createdAt.toISOString(),
+        ].join(','),
+      ),
+    ];
+
+    return lines.join('\n');
   }
 }

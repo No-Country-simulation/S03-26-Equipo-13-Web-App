@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDashboardSummary, useDashboardMessages } from "@/hooks/use-analytics";
-import { useTasks } from "@/hooks/use-tasks";
+import { useTasks, useUpdateTask } from "@/hooks/use-tasks";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   new:      { label: "Nuevos",    color: "text-[#6366f1]" },
@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const { data: summary, isLoading: loadingSummary } = useDashboardSummary();
   const { data: msgStats = [], isLoading: loadingChart } = useDashboardMessages("7d");
   const { data: tasks = [], isLoading: loadingTasks } = useTasks({ status: "pending" });
+  const updateTask = useUpdateTask();
 
   const pendingTasks = tasks.slice(0, 5);
 
@@ -193,7 +194,11 @@ export default function DashboardPage() {
                 >
                   <Checkbox
                     id={tarea.id}
-                    className="mt-0.5 border-slate-300 h-4 w-4 rounded"
+                    checked={tarea.status === "done"}
+                    onCheckedChange={() =>
+                      updateTask.mutate({ id: tarea.id, data: { done: tarea.status !== "done" } })
+                    }
+                    className="mt-0.5 border-slate-300 h-4 w-4 rounded data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600"
                   />
                   <div className="flex flex-col select-none">
                     <label htmlFor={tarea.id} className="text-sm font-semibold text-slate-700 tracking-tight cursor-pointer">
